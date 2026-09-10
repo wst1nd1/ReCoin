@@ -1,0 +1,27 @@
+# Описание сервиса для Render. Площадка читает этот файл при подключении
+# репозитория и создаёт сервис без ручной настройки.
+services:
+  - type: web
+    name: recoin
+    runtime: python
+    plan: free
+    region: frankfurt
+    buildCommand: pip install -r requirements.txt
+    # Один рабочий процесс обязателен. Разобранные выписки хранятся в памяти,
+    # при нескольких процессах пользователь теряет загруженные данные.
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 1
+    healthCheckPath: /
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.13.4"
+      # Площадка отдаёт сайт по HTTPS, поэтому сессионная кука помечается Secure.
+      - key: RECOIN_HTTPS
+        value: "1"
+      - key: RECOIN_MODEL
+        value: claude-opus-5
+      # sync: false означает, что значение запрашивается при развёртывании
+      # и в репозиторий не попадает.
+      - key: ANTHROPIC_BASE_URL
+        sync: false
+      - key: ANTHROPIC_AUTH_TOKEN
+        sync: false
