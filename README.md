@@ -1,3 +1,13 @@
+---
+title: ReCoin
+emoji: 🪙
+colorFrom: green
+colorTo: yellow
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # ReCoin
 
 Разбирает банковскую выписку и показывает, сколько денег вы потратили на самом деле.
