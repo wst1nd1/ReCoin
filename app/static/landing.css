@@ -29,6 +29,7 @@
   --footer-glow-1: rgba(217, 163, 54, 0.16);
   --footer-word: #ded6c3;
   --gold-light: #edd08a;
+  --nav-h: 67px;
   --tt-track: rgba(22, 36, 31, 0.15);
   --tt-thumb-bg: var(--card);
   --font: -apple-system, "SF Pro Display", "Segoe UI", system-ui, "Helvetica Neue", Arial, sans-serif;
@@ -59,6 +60,7 @@ html, body {
 
 @media (prefers-reduced-motion: reduce) {
   .reveal { opacity: 1; transform: none; transition: none; }
+  .hero-art path { animation: none; }
   * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
 
@@ -74,7 +76,7 @@ html, body {
   grid-template-columns: auto 1fr auto;
   align-items: center;
   gap: 20px;
-  min-height: 67px;
+  min-height: var(--nav-h);
   padding: 0 clamp(20px, 5vw, 60px);
 
   /* Полупрозрачное стекло: фон страницы просвечивает и размывается,
@@ -104,6 +106,7 @@ html, body {
   font-size: 28px;
   letter-spacing: -0.03em;
 }
+.mark img { width: 36px; height: auto; display: block; }
 .mark b { font-weight: 620; }
 
 .pill {
@@ -153,7 +156,9 @@ html, body {
 
 .hero {
   position: relative;
-  padding: clamp(40px, 9vw, 110px) clamp(20px, 5vw, 60px) clamp(50px, 7vw, 90px);
+  /* Верхний отступ поднят под шапку: узор уходит за неё и виден сквозь стекло. */
+  margin-top: calc(-1 * var(--nav-h));
+  padding: calc(clamp(40px, 9vw, 110px) + var(--nav-h)) clamp(20px, 5vw, 60px) clamp(50px, 7vw, 90px);
   min-height: min(74vh, 660px);
   display: flex;
   align-items: flex-end;
@@ -162,6 +167,23 @@ html, body {
 
 .hero-art { position: absolute; inset: 0; z-index: 0; }
 .hero-art svg { width: 100%; height: 100%; display: block; }
+
+/* Шевроны выезжают справа при загрузке страницы, каждый со своей задержкой. */
+.hero-art path {
+  transform-box: view-box;
+  animation: artIn 0.62s cubic-bezier(0.2, 0.8, 0.25, 1) both;
+}
+.hero-art path:nth-child(2) { animation-delay: 0.05s; }
+.hero-art path:nth-child(3) { animation-delay: 0.1s; }
+.hero-art path:nth-child(4) { animation-delay: 0.15s; }
+.hero-art path:nth-child(5) { animation-delay: 0.2s; }
+.hero-art path:nth-child(6) { animation-delay: 0.25s; }
+
+/* Прозрачность у фигур своя, поэтому анимируется только сдвиг. */
+@keyframes artIn {
+  from { transform: translateX(280px); }
+  to { transform: none; }
+}
 
 .hero::after {
   content: "";
@@ -566,7 +588,8 @@ h2 {
 }
 
 @media (max-width: 520px) {
-  .nav { gap: 12px; padding: 0 16px; min-height: 60px; }
+  :root { --nav-h: 60px; }
+  .nav { gap: 12px; padding: 0 16px; }
   .mark { font-size: 17px; }
   .nav-actions { gap: 6px; }
   .nav .pill { padding: 9px 13px; font-size: 13.5px; }
