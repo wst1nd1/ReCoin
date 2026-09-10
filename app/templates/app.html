@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ReCoin – кабинет</title>
+<link rel="stylesheet" href="/static/app.css">
+<link rel="icon" href="/static/logo.png" type="image/png">
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- Боковая панель -->
+  <aside class="rail">
+    <a class="rail-logo" href="/app" title="ReCoin">
+      <img src="/static/logo.png" alt="ReCoin">
+    </a>
+
+    <nav class="rail-nav">
+      <button class="rail-btn active" data-step="0" title="Выписки" aria-label="Выписки">
+        <svg viewBox="0 0 24 24"><path d="M6 3h8l4 4v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v5h4"/></svg>
+      </button>
+      <button class="rail-btn" data-step="1" title="Счета" aria-label="Счета">
+        <svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h4"/></svg>
+      </button>
+      <button class="rail-btn" data-step="2" title="Траты" aria-label="Траты">
+        <svg viewBox="0 0 24 24"><path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/></svg>
+      </button>
+      <button class="rail-btn" data-step="3" title="Вопросы" aria-label="Вопросы">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.6 2.6 0 1 1 3.3 2.5c-.6.2-.8.7-.8 1.3v.4"/><circle cx="12" cy="17" r=".6" fill="currentColor"/></svg>
+      </button>
+      <button class="rail-btn" data-step="4" title="Разбор" aria-label="Разбор">
+        <svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9h-9V3z"/></svg>
+      </button>
+    </nav>
+
+    <button class="rail-btn quiet" id="logout" title="Выйти" aria-label="Выйти">
+      <svg viewBox="0 0 24 24"><path d="M15 4h3a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-3M10 8l-4 4 4 4M6 12h11"/></svg>
+    </button>
+  </aside>
+
+  <!-- Основная область -->
+  <div class="main">
+
+    <header class="topbar">
+      <div class="titles">
+        <h1 id="page-title">Выписки</h1>
+        <p id="page-sub">Загрузите PDF из банка – разберём операции и посчитаем настоящие траты.</p>
+      </div>
+
+      <div class="topbar-right">
+        <div class="user">
+          <span class="avatar">{{ user.initials }}</span>
+          <span class="who">
+            <b>{{ user.name }}</b>
+            <i>{{ user.email }}</i>
+          </span>
+        </div>
+      </div>
+    </header>
+
+    <div class="content">
+
+      <!-- 1. Выписки -->
+      <section class="screen on" id="s-upload">
+        <div class="grid-upload">
+          <label class="drop card" id="drop">
+            <img src="/static/logo.png" alt="" class="coin">
+            <h2 id="drop-title">Перетащите выписку в PDF</h2>
+            <p id="drop-sub">или нажмите, чтобы выбрать файл</p>
+            <input type="file" id="file" accept="application/pdf,.pdf" multiple>
+          </label>
+
+          <div class="card side-note">
+            <h3>Как получить выписку</h3>
+            <ol>
+              <li>В приложении банка откройте счёт или карту.</li>
+              <li>Выберите «Выписка» или «Справка о движении средств».</li>
+              <li>Период – год, формат – PDF.</li>
+            </ol>
+            <p class="muted">За год видно подписки, сезонные траты и возвращённые долги.
+               По месяцу многое просто не успевает проявиться.</p>
+          </div>
+        </div>
+
+        <div class="files" id="files"></div>
+        <div id="upload-error"></div>
+
+        <div class="actions" id="upload-actions" hidden>
+          <button class="btn" id="go-accounts">Продолжить</button>
+          <button class="btn ghost" id="add-more">Добавить ещё выписку</button>
+        </div>
+      </section>
+
+      <!-- 2. Счета -->
+      <section class="screen" id="s-accounts">
+        <div id="accounts-empty" class="card note" hidden>
+          Ничего уточнять не нужно – в выписке не нашлось переводов на счета,
+          которые заметно повлияли бы на итог.
+        </div>
+
+        <div id="awaiting-list"></div>
+
+        <div class="section-title" id="pending-title" hidden>Куда ещё уходят деньги</div>
+        <p class="note-line" id="pending-hint" hidden>
+          Заметная часть переводов идёт на счёт, по которому вы выписку не загружали.
+          Уточните, чей он – от этого зависит точность расчёта.</p>
+        <div id="pending-list"></div>
+
+        <div class="section-title" id="accounts-title" hidden>Ваши счета</div>
+        <div id="accounts-list"></div>
+
+        <div class="actions">
+          <button class="btn" id="go-dash">Показать разбор</button>
+          <button class="btn ghost" id="back-upload">Назад</button>
+        </div>
+      </section>
+
+      <!-- 3. Дашборд -->
+      <section class="screen" id="s-dash">
+        <div id="dash"></div>
+        <div class="actions">
+          <button class="btn" id="go-questions">Перейти к разбору</button>
+          <button class="btn ghost" id="back-accounts">Изменить счета</button>
+        </div>
+      </section>
+
+      <!-- 4. Вопросы -->
+      <section class="screen" id="s-questions">
+        <div class="card quiz-card" id="quiz"></div>
+      </section>
+
+      <!-- 5. Разбор -->
+      <section class="screen" id="s-report">
+        <div id="report"></div>
+        <div class="actions">
+          <button class="btn ghost" id="back-dash">Вернуться к цифрам</button>
+          <button class="btn ghost" id="start-over">Загрузить другую выписку</button>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
