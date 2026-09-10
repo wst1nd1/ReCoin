@@ -8,3 +8,4 @@ recoin.db
 .pytest_cache/
 .claude/
 merchant_cache.json
+feedback/

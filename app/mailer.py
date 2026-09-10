@@ -14,6 +14,7 @@
 
 from __future__ import annotations
 
+import base64
 import json
 import logging
 import os
@@ -27,6 +28,9 @@ log = logging.getLogger(__name__)
 
 BREVO_URL = "https://api.brevo.com/v3/smtp/email"
 REQUEST_TIMEOUT = 20
+
+# Куда приходят отзывы из приложения.
+FEEDBACK_TO = os.getenv("FEEDBACK_TO") or "thewasteland983@gmail.com"
 
 
 def _brevo_config() -> dict[str, str] | None:
@@ -77,16 +81,21 @@ def _compose(code: str, name: str) -> tuple[str, str]:
     return subject, body
 
 
-def _send_via_brevo(to: str, code: str, name: str) -> bool:
+def _send_via_brevo(to: str, subject: str, body: str,
+                    attachment: tuple[str, bytes] | None = None) -> bool:
     settings = _brevo_config()
-    subject, body = _compose(code, name)
 
-    payload = json.dumps({
+    letter = {
         "sender": {"name": settings["name"], "email": settings["sender"]},
         "to": [{"email": to}],
         "subject": subject,
         "textContent": body,
-    }).encode("utf-8")
+    }
+    if attachment:
+        name, data = attachment
+        letter["attachment"] = [{"name": name, "content": base64.b64encode(data).decode()}]
+
+    payload = json.dumps(letter).encode("utf-8")
 
     request = urllib.request.Request(
         BREVO_URL,
@@ -112,15 +121,20 @@ def _send_via_brevo(to: str, code: str, name: str) -> bool:
         return False
 
 
-def _send_via_smtp(to: str, code: str, name: str) -> bool:
+def _send_via_smtp(to: str, subject: str, body: str,
+                   attachment: tuple[str, bytes] | None = None) -> bool:
     settings = _smtp_config()
-    subject, body = _compose(code, name)
 
     message = EmailMessage()
     message["Subject"] = subject
     message["From"] = settings["sender"]
     message["To"] = to
     message.set_content(body)
+
+    if attachment:
+        name, data = attachment
+        subtype = name.rsplit(".", 1)[-1].lower() if "." in name else "octet-stream"
+        message.add_attachment(data, maintype="image", subtype=subtype, filename=name)
 
     try:
         port = int(settings["port"])
@@ -143,14 +157,29 @@ def _send_via_smtp(to: str, code: str, name: str) -> bool:
     return True
 
 
+def _deliver(to: str, subject: str, body: str,
+             attachment: tuple[str, bytes] | None = None) -> bool:
+    how = transport()
+    if how == "brevo":
+        return _send_via_brevo(to, subject, body, attachment)
+    if how == "smtp":
+        return _send_via_smtp(to, subject, body, attachment)
+    return False
+
+
 def send_reset_code(to: str, code: str, name: str = "") -> bool:
     """Отправить код. False, если письмо не ушло."""
-    how = transport()
+    subject, body = _compose(code, name)
+    if _deliver(to, subject, body):
+        return True
 
-    if how == "brevo":
-        return _send_via_brevo(to, code, name)
-    if how == "smtp":
-        return _send_via_smtp(to, code, name)
-
-    log.warning("Почта не настроена. Код восстановления для %s: %s", to, code)
+    # Пока доставка не налажена, код записывается в журнал сервера, иначе
+    # он пропадает и сменить пароль становится нечем.
+    log.warning("Письмо не доставлено. Код восстановления для %s: %s", to, code)
     return False
+
+
+def send_feedback(text: str, author: str, attachment: tuple[str, bytes] | None = None) -> bool:
+    """Переслать отзыв пользователя."""
+    body = f"Отзыв из ReCoin\n\nОт кого: {author}\n\n{text}\n"
+    return _deliver(FEEDBACK_TO, "Отзыв о ReCoin", body, attachment)

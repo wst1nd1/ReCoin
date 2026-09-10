@@ -22,8 +22,8 @@
          стрелками браузера. Содержимое кнопок подставляет app.js. -->
     <nav class="rail-nav" id="rail-nav"></nav>
 
-    <button class="rail-btn quiet" id="logout" title="Выйти" aria-label="Выйти">
-      <svg viewBox="0 0 24 24"><path d="M15 4h3a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-3M10 8l-4 4 4 4M6 12h11"/></svg>
+    <button class="rail-btn quiet" id="feedback-btn" title="Оставить отзыв" aria-label="Оставить отзыв">
+      <svg viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H19v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H19v3H6.5A2.5 2.5 0 0 1 4 20.5z"/><path d="M8 7.5h7M8 11h5"/></svg>
     </button>
   </aside>
 
@@ -37,12 +37,21 @@
       </div>
 
       <div class="topbar-right">
-        <div class="user">
-          <span class="avatar">{{ user.initials }}</span>
-          <span class="who">
-            <b>{{ user.name }}</b>
-            <i>{{ user.email }}</i>
-          </span>
+        <div class="user-wrap">
+          <button class="user" id="user-btn" aria-expanded="false" aria-haspopup="menu">
+            <span class="avatar">{{ user.initials }}</span>
+            <span class="who">
+              <b>{{ user.name }}</b>
+              <i>{{ user.email }}</i>
+            </span>
+            <span class="chevron" aria-hidden="true"></span>
+          </button>
+
+          <div class="user-menu" id="user-menu" role="menu" hidden>
+            <button role="menuitem" id="open-profile">Профиль</button>
+            <button role="menuitem" id="change-password">Изменить пароль</button>
+            <button role="menuitem" id="logout">Выйти</button>
+          </div>
         </div>
       </div>
     </header>
@@ -127,7 +136,118 @@
         </div>
       </section>
 
+      <!-- 6. Профиль -->
+      <section class="screen" id="s-profile">
+        <div class="card profile-card">
+          <div class="profile-head">
+            <div class="profile-avatar" id="profile-avatar">
+              <span id="profile-initials">{{ user.initials }}</span>
+            </div>
+
+            <div class="profile-actions">
+              <label class="btn ghost">
+                <input type="file" id="avatar-input" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
+                Сменить картинку
+              </label>
+              <button class="btn ghost" id="avatar-remove" hidden>Убрать</button>
+              <p class="muted">png, jpg, webp или gif до 2 МБ</p>
+            </div>
+          </div>
+
+          <div id="avatar-error"></div>
+
+          <div class="profile-rows">
+            <div class="profile-row">
+              <span>Имя</span>
+              <b id="profile-name">{{ user.name }}</b>
+            </div>
+            <div class="profile-row">
+              <span>Почта</span>
+              <b id="profile-email">{{ user.email }}</b>
+            </div>
+            <div class="profile-row">
+              <span>Дата регистрации</span>
+              <b id="profile-registered">—</b>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button class="btn ghost" id="profile-password">Изменить пароль</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 7. Отзыв -->
+      <section class="screen" id="s-feedback">
+        <div class="card feedback-card" id="feedback-form">
+          <h3>Что улучшить</h3>
+          <p class="sub">Пожелание, замечание или описание ошибки. Можно приложить снимок экрана.</p>
+
+          <textarea id="feedback-text" maxlength="4000"
+                    placeholder="Расскажите, что показалось неудобным или чего не хватает"></textarea>
+
+          <label class="file-pick" id="image-pick">
+            <input type="file" id="feedback-image" accept="image/png,image/jpeg,image/webp,image/gif">
+            <span id="image-name">Прикрепить картинку</span>
+          </label>
+
+          <div id="feedback-error"></div>
+
+          <div class="actions">
+            <button class="btn" id="feedback-send">Отправить</button>
+          </div>
+        </div>
+
+        <div class="card feedback-done" id="feedback-done" hidden>
+          <div class="done-mark" aria-hidden="true">✓</div>
+          <h3>Ваш отзыв отправлен!</h3>
+          <p>Спасибо что помогаете нам стать лучше!</p>
+          <div class="actions">
+            <button class="btn ghost" id="feedback-again">Написать ещё</button>
+          </div>
+        </div>
+      </section>
+
     </div>
+  </div>
+</div>
+
+<!-- Смена пароля -->
+<div class="modal" id="pass-modal" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="pass-title">
+    <button class="close" id="pass-close" aria-label="Закрыть">✕</button>
+    <h2 id="pass-title">Изменить пароль</h2>
+    <p class="modal-sub" id="pass-sub">Пришлём код на вашу почту.</p>
+
+    <form id="pass-form">
+      <label class="field" id="pass-code-field" hidden>
+        <span>Код из письма</span>
+        <input type="text" name="code" inputmode="numeric" maxlength="6" placeholder="шесть цифр">
+      </label>
+
+      <label class="field" id="pass-new-field" hidden>
+        <span>Новый пароль</span>
+        <input type="password" name="password" autocomplete="new-password" placeholder="Новый пароль">
+      </label>
+
+      <ul class="rules" id="pass-rules" hidden>
+        <li data-rule="length">не менее 8 символов</li>
+        <li data-rule="digit">хотя бы одна цифра</li>
+        <li data-rule="upper">хотя бы одна заглавная буква</li>
+        <li data-rule="special">хотя бы один специальный знак</li>
+      </ul>
+
+      <label class="field" id="pass-repeat-field" hidden>
+        <span>Повторите пароль</span>
+        <input type="password" name="password_repeat" autocomplete="new-password"
+               placeholder="Тот же пароль ещё раз">
+      </label>
+
+      <div class="form-error" id="pass-error" hidden></div>
+      <div class="form-note" id="pass-note" hidden></div>
+
+      <button class="btn full" type="submit" id="pass-submit">Прислать код</button>
+    </form>
   </div>
 </div>
 

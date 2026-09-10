@@ -8,6 +8,8 @@ const ICONS = {
   dash: '<svg viewBox="0 0 24 24"><path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/></svg>',
   questions: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.6 2.6 0 1 1 3.3 2.5c-.6.2-.8.7-.8 1.3v.4"/><circle cx="12" cy="17" r=".6" fill="currentColor"/></svg>',
   report: '<svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9h-9V3z"/></svg>',
+  profile: '<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>',
+  feedback: '<svg viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H19v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H19v3H6.5A2.5 2.5 0 0 1 4 20.5z"/><path d="M8 7.5h7M8 11h5"/></svg>',
 };
 
 const STEPS = [
@@ -21,6 +23,10 @@ const STEPS = [
     sub: "Несколько вопросов, чтобы разбор был точнее." },
   { id: "s-report", slug: "razbor", icon: "report", group: 1, title: "Разбор",
     sub: "Что получается, что мешает и что с этим делать." },
+  { id: "s-profile", slug: "profil", icon: "profile", group: 2, title: "Профиль",
+    sub: "Сведения об учётной записи." },
+  { id: "s-feedback", slug: "otzyv", icon: "feedback", group: 3, title: "Оставить отзыв",
+    sub: "Расскажите, что стоит улучшить, мы читаем всё." },
 ];
 
 // Группы разделов. Каждой соответствует одна кнопка боковой панели.
@@ -90,8 +96,14 @@ function deltaMark(delta) {
 /* ---------- навигация ---------- */
 
 // Последний открытый раздел каждой группы. Кнопка возвращает туда, где
-// пользователь остановился, а не в начало группы.
-const lastInGroup = [0, 3];
+// пользователь остановился, а не в начало группы. Третья группа – отзыв,
+// её кнопка стоит отдельно внизу панели.
+const lastInGroup = [0, 3, 5, 6];
+const PROFILE_STEP = 5;
+const FEEDBACK_STEP = 6;
+// Разделы вне ленты разбора: попадать в них можно всегда, и они не
+// открывают шаги, до которых пользователь ещё не дошёл.
+const SIDE_STEPS = new Set([PROFILE_STEP, FEEDBACK_STEP]);
 
 function renderRail() {
   const current = STEPS[state.step];
@@ -116,11 +128,17 @@ function renderRail() {
       go(lastInGroup[index]);
     };
   });
+
+  $("feedback-btn").classList.toggle("active", state.step === FEEDBACK_STEP);
 }
 
 function go(index, push = true) {
   state.step = index;
-  state.reached = Math.max(state.reached, index);
+  // Отзыв доступен всегда и не считается пройденным шагом разбора,
+  // иначе он открыл бы разделы, до которых пользователь ещё не дошёл.
+  if (!SIDE_STEPS.has(index)) {
+    state.reached = Math.max(state.reached, index);
+  }
   lastInGroup[STEPS[index].group] = index;
 
   document.querySelectorAll(".screen").forEach((el) => el.classList.remove("on"));
@@ -142,8 +160,30 @@ function go(index, push = true) {
 
 window.addEventListener("popstate", (event) => {
   const step = event.state && typeof event.state.step === "number" ? event.state.step : 0;
-  if (step <= state.reached) go(step, false);
+  if (SIDE_STEPS.has(step) || step <= state.reached) go(step, false);
 });
+
+$("feedback-btn").onclick = () => go(FEEDBACK_STEP);
+
+/* ---------- меню профиля ---------- */
+
+const userBtn = $("user-btn");
+const userMenu = $("user-menu");
+
+function closeUserMenu() {
+  userMenu.hidden = true;
+  userBtn.setAttribute("aria-expanded", "false");
+}
+
+userBtn.onclick = (e) => {
+  e.stopPropagation();
+  const open = userMenu.hidden;
+  userMenu.hidden = !open;
+  userBtn.setAttribute("aria-expanded", String(open));
+};
+
+document.addEventListener("click", () => { if (!userMenu.hidden) closeUserMenu(); });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeUserMenu(); });
 
 $("logout").onclick = async () => {
   await fetch("/api/auth/logout", { method: "POST" });
@@ -833,6 +873,246 @@ $("start-over").onclick = async () => {
   await fetch("/api/reset", { method: "POST" });
   location.reload();
 };
+
+/* ---------- профиль ---------- */
+
+// Картинка профиля показывается и в верхней панели, и в самом разделе.
+function paintProfile(data) {
+  $("profile-name").textContent = data.name;
+  $("profile-email").textContent = data.email;
+  $("profile-registered").textContent = data.registered || "неизвестна";
+
+  const holder = $("profile-avatar");
+  const topAvatar = document.querySelector(".user .avatar");
+
+  if (data.avatar) {
+    holder.innerHTML = `<img src="${data.avatar}" alt="">`;
+    topAvatar.innerHTML = `<img src="${data.avatar}" alt="">`;
+    $("avatar-remove").hidden = false;
+  } else {
+    holder.innerHTML = `<span>${data.initials}</span>`;
+    topAvatar.textContent = data.initials;
+    $("avatar-remove").hidden = true;
+  }
+}
+
+async function loadProfile() {
+  const res = await fetch("/api/profile");
+  if (res.status === 401) { location.href = "/"; return; }
+  paintProfile(await res.json());
+}
+
+$("open-profile").onclick = () => {
+  closeUserMenu();
+  go(PROFILE_STEP);
+  loadProfile();
+};
+
+$("profile-password").onclick = () => $("change-password").click();
+
+$("avatar-input").addEventListener("change", async () => {
+  const file = $("avatar-input").files[0];
+  if (!file) return;
+
+  const errorBox = $("avatar-error");
+  errorBox.innerHTML = "";
+
+  const form = new FormData();
+  form.append("image", file);
+
+  try {
+    const res = await fetch("/api/profile/avatar", { method: "POST", body: form });
+    const body = await res.json();
+    if (!res.ok) throw new Error(body.detail || "Не получилось загрузить.");
+    paintProfile(body);
+  } catch (err) {
+    errorBox.innerHTML = `<div class="err">${err.message}</div>`;
+  } finally {
+    $("avatar-input").value = "";
+  }
+});
+
+$("avatar-remove").onclick = async () => {
+  const res = await fetch("/api/profile/avatar", { method: "DELETE" });
+  if (res.ok) paintProfile(await res.json());
+};
+
+// Картинка нужна сразу: она стоит в верхней панели на каждом экране.
+loadProfile();
+
+/* ---------- отзыв ---------- */
+
+const feedbackImage = $("feedback-image");
+
+feedbackImage.addEventListener("change", () => {
+  const file = feedbackImage.files[0];
+  $("image-name").textContent = file ? file.name : "Прикрепить картинку";
+  $("image-pick").classList.toggle("filled", Boolean(file));
+});
+
+$("feedback-send").onclick = async () => {
+  const text = $("feedback-text").value.trim();
+  const errorBox = $("feedback-error");
+  errorBox.innerHTML = "";
+
+  if (!text) {
+    errorBox.innerHTML = `<div class="err">Напишите, что хотите сообщить.</div>`;
+    return;
+  }
+
+  const form = new FormData();
+  form.append("text", text);
+  if (feedbackImage.files[0]) form.append("image", feedbackImage.files[0]);
+
+  const button = $("feedback-send");
+  button.disabled = true;
+  button.textContent = "Отправляю…";
+
+  try {
+    const res = await fetch("/api/feedback", { method: "POST", body: form });
+    if (res.status === 401) { location.href = "/"; return; }
+    const body = await res.json();
+    if (!res.ok) throw new Error(body.detail || "Не получилось отправить.");
+
+    $("feedback-form").hidden = true;
+    $("feedback-done").hidden = false;
+  } catch (err) {
+    errorBox.innerHTML = `<div class="err">${err.message}</div>`;
+  } finally {
+    button.disabled = false;
+    button.textContent = "Отправить";
+  }
+};
+
+$("feedback-again").onclick = () => {
+  $("feedback-text").value = "";
+  feedbackImage.value = "";
+  $("image-name").textContent = "Прикрепить картинку";
+  $("image-pick").classList.remove("filled");
+  $("feedback-done").hidden = true;
+  $("feedback-form").hidden = false;
+};
+
+/* ---------- смена пароля ---------- */
+
+const passModal = $("pass-modal");
+const passForm = $("pass-form");
+const passError = $("pass-error");
+const passNote = $("pass-note");
+const passSubmit = $("pass-submit");
+
+// Те же требования, что и при регистрации. Сервер проверяет их повторно.
+const PASS_CHECKS = {
+  length: (v) => v.length >= 8,
+  digit: (v) => /\d/.test(v),
+  upper: (v) => /[A-ZА-ЯЁ]/.test(v),
+  special: (v) => /[^A-Za-zА-Яа-яЁё0-9\s]/.test(v),
+};
+
+let passStage = "request";
+
+function paintPassRules() {
+  const value = passForm.password.value;
+  let allGood = true;
+  $("pass-rules").querySelectorAll("li").forEach((item) => {
+    const ok = PASS_CHECKS[item.dataset.rule](value);
+    item.classList.toggle("ok", ok);
+    if (!ok) allGood = false;
+  });
+  return allGood;
+}
+
+passForm.password.addEventListener("input", () => {
+  if (passStage === "confirm") paintPassRules();
+});
+
+function setPassStage(stage) {
+  passStage = stage;
+  const confirming = stage === "confirm";
+
+  $("pass-sub").textContent = confirming
+    ? "Введите код из письма и придумайте новый пароль."
+    : "Пришлём код на вашу почту.";
+  $("pass-code-field").hidden = !confirming;
+  $("pass-new-field").hidden = !confirming;
+  $("pass-repeat-field").hidden = !confirming;
+  $("pass-rules").hidden = !confirming;
+  passSubmit.textContent = confirming ? "Сменить пароль" : "Прислать код";
+
+  passError.hidden = true;
+  if (confirming) paintPassRules();
+}
+
+$("change-password").onclick = () => {
+  closeUserMenu();
+  passForm.reset();
+  passNote.hidden = true;
+  setPassStage("request");
+  passModal.hidden = false;
+};
+
+$("pass-close").onclick = () => { passModal.hidden = true; };
+passModal.addEventListener("click", (e) => { if (e.target === passModal) passModal.hidden = true; });
+
+passForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  passError.hidden = true;
+
+  const email = document.querySelector(".user .who i").textContent.trim();
+  passSubmit.disabled = true;
+
+  try {
+    if (passStage === "request") {
+      passSubmit.textContent = "Отправляю…";
+      const res = await fetch("/api/auth/reset/request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.detail || "Не получилось.");
+
+      setPassStage("confirm");
+      passNote.textContent = body.mail_configured
+        ? `Код отправлен на ${email}.`
+        : "Почтовый сервер не настроен, код записан в журнал сервера.";
+      passNote.hidden = false;
+      return;
+    }
+
+    if (passForm.code.value.trim().length !== 6) throw new Error("Код состоит из шести цифр.");
+    if (!paintPassRules()) throw new Error("Пароль не отвечает требованиям ниже.");
+    if (passForm.password.value !== passForm.password_repeat.value) {
+      throw new Error("Пароли не совпадают.");
+    }
+
+    passSubmit.textContent = "Меняю…";
+    const res = await fetch("/api/auth/reset/confirm", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email,
+        code: passForm.code.value.trim(),
+        password: passForm.password.value,
+        password_repeat: passForm.password_repeat.value,
+      }),
+    });
+    const body = await res.json();
+    if (!res.ok) throw new Error(body.detail || "Не получилось.");
+
+    passModal.hidden = true;
+    // Смена пароля закрывает прежние входы, поэтому страница открывается заново.
+    location.reload();
+  } catch (err) {
+    passError.textContent = err.message;
+    passError.hidden = false;
+  } finally {
+    passSubmit.disabled = false;
+    // Подпись берётся по текущему этапу: после перехода ко второму шагу
+    // возврат к прежнему тексту сбил бы кнопку.
+    passSubmit.textContent = passStage === "confirm" ? "Сменить пароль" : "Прислать код";
+  }
+});
 
 // Первый раздел заменяет запись в истории, а не добавляет новую,
 // иначе первое нажатие «назад» никуда не ведёт.

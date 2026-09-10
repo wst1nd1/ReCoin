@@ -43,6 +43,8 @@ class User:
     id: int
     email: str
     name: str
+    created_at: float = 0.0
+    avatar_version: float = 0.0  # 0 означает, что картинка не загружена
 
     @property
     def initials(self) -> str:
@@ -50,6 +52,10 @@ class User:
         if not parts:
             return self.email[:1].upper()
         return "".join(p[0].upper() for p in parts[:2])
+
+    @property
+    def has_avatar(self) -> bool:
+        return self.avatar_version > 0
 
 
 def _connect() -> sqlite3.Connection:
@@ -85,6 +91,17 @@ def init_db() -> None:
             """
         )
 
+        # Картинка профиля появилась позже, поэтому столбцы добавляются
+        # отдельно: у прежних баз их нет.
+        existing = {row["name"] for row in conn.execute("PRAGMA table_info(users)")}
+        for column, definition in (
+            ("avatar", "BLOB"),
+            ("avatar_type", "TEXT"),
+            ("avatar_updated", "REAL"),
+        ):
+            if column not in existing:
+                conn.execute(f"ALTER TABLE users ADD COLUMN {column} {definition}")
+
 
 def _hash_password(password: str, salt: bytes | None = None) -> str:
     salt = salt or os.urandom(16)
@@ -107,7 +124,14 @@ def _password_matches(password: str, stored: str) -> bool:
 
 
 def _row_to_user(row: sqlite3.Row) -> User:
-    return User(id=row["id"], email=row["email"], name=row["name"] or row["email"].split("@")[0])
+    keys = row.keys()
+    return User(
+        id=row["id"],
+        email=row["email"],
+        name=row["name"] or row["email"].split("@")[0],
+        created_at=row["created_at"] if "created_at" in keys else 0.0,
+        avatar_version=(row["avatar_updated"] or 0.0) if "avatar_updated" in keys else 0.0,
+    )
 
 
 def normalize_email(email: str) -> str:
@@ -267,3 +291,41 @@ def reset_password(email: str, code: str, new_password: str) -> User:
         conn.execute("DELETE FROM sessions WHERE user_id = ?", (user_row["id"],))
 
     return _row_to_user(user_row)
+
+
+# ---------- картинка профиля ----------
+
+
+def set_avatar(user_id: int, data: bytes, mime: str) -> float:
+    """Сохранить картинку профиля. Возвращает отметку времени для адреса."""
+    stamp = time.time()
+    with _connect() as conn:
+        conn.execute(
+            "UPDATE users SET avatar = ?, avatar_type = ?, avatar_updated = ? WHERE id = ?",
+            (data, mime, stamp, user_id),
+        )
+    return stamp
+
+
+def get_avatar(user_id: int) -> tuple[bytes, str] | None:
+    with _connect() as conn:
+        row = conn.execute(
+            "SELECT avatar, avatar_type FROM users WHERE id = ?", (user_id,)
+        ).fetchone()
+    if row is None or not row["avatar"]:
+        return None
+    return row["avatar"], row["avatar_type"] or "image/png"
+
+
+def clear_avatar(user_id: int) -> None:
+    with _connect() as conn:
+        conn.execute(
+            "UPDATE users SET avatar = NULL, avatar_type = NULL, avatar_updated = NULL WHERE id = ?",
+            (user_id,),
+        )
+
+
+def user_by_id(user_id: int) -> User | None:
+    with _connect() as conn:
+        row = conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+    return _row_to_user(row) if row else None

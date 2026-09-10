@@ -4,12 +4,13 @@ from __future__ import annotations
 
 import logging
 import time
+from datetime import datetime
 from dataclasses import dataclass, field
 from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
-from fastapi import Cookie, FastAPI, File, HTTPException, UploadFile
+from fastapi import BackgroundTasks, Cookie, FastAPI, File, Form, HTTPException, Response, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -27,6 +28,11 @@ MAX_UPLOAD_BYTES = 25 * 1024 * 1024
 SESSION_TTL_SECONDS = 60 * 60 * 3
 MAX_SESSIONS = 200
 AUTH_COOKIE = "recoin_auth"
+MAX_FEEDBACK_LENGTH = 4000
+MAX_IMAGE_BYTES = 5 * 1024 * 1024
+MAX_AVATAR_BYTES = 2 * 1024 * 1024
+# Копии отзывов на случай, когда письмо не уходит.
+FEEDBACK_DIR = BASE_DIR.parent / "feedback"
 
 app = FastAPI(title="ReCoin")
 app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
@@ -292,14 +298,16 @@ async def register(body: dict):
 
 
 @app.post("/api/auth/reset/request")
-async def reset_request(body: dict):
+async def reset_request(body: dict, background: BackgroundTasks):
     """Выслать код восстановления на почту."""
     email = body.get("email", "")
     issued = auth.create_reset_code(email)
 
     if issued is not None:
         code, name = issued
-        mailer.send_reset_code(auth.normalize_email(email), code, name)
+        # Письмо уходит после ответа: недоступный почтовый сервер отвечает
+        # не сразу, и пользователь ждал бы окончания попытки.
+        background.add_task(mailer.send_reset_code, auth.normalize_email(email), code, name)
 
     # Ответ одинаковый независимо от того, есть такая почта или нет,
     # иначе по нему можно перебирать зарегистрированные адреса.
@@ -492,6 +500,123 @@ async def build_report(body: dict, recoin_auth: str | None = Cookie(default=None
         result = fallback.build_report(report, session.answers)
 
     return JSONResponse(result)
+
+
+MONTHS_RU = [
+    "января", "февраля", "марта", "апреля", "мая", "июня",
+    "июля", "августа", "сентября", "октября", "ноября", "декабря",
+]
+
+
+def _profile_payload(user: auth.User) -> dict[str, Any]:
+    when = ""
+    if user.created_at:
+        moment = datetime.fromtimestamp(user.created_at)
+        when = f"{moment.day} {MONTHS_RU[moment.month - 1]} {moment.year}"
+    return {
+        "name": user.name,
+        "email": user.email,
+        "initials": user.initials,
+        "registered": when,
+        # Адрес меняется вместе с картинкой, иначе браузер показывал бы прежнюю.
+        "avatar": f"/avatar/{user.id}?v={int(user.avatar_version)}" if user.has_avatar else None,
+    }
+
+
+@app.get("/api/profile")
+async def profile(recoin_auth: str | None = Cookie(default=None)):
+    return JSONResponse(_profile_payload(_require_user(recoin_auth)))
+
+
+@app.get("/avatar/{user_id}")
+async def avatar(user_id: int):
+    """Картинка профиля. Хранится в базе, поэтому переживает перезапуск."""
+    picture = auth.get_avatar(user_id)
+    if picture is None:
+        raise HTTPException(status_code=404, detail="Картинка не загружена")
+    data, mime = picture
+    return Response(content=data, media_type=mime,
+                    headers={"Cache-Control": "public, max-age=31536000, immutable"})
+
+
+@app.post("/api/profile/avatar")
+async def set_avatar(
+    image: UploadFile = File(...),
+    recoin_auth: str | None = Cookie(default=None),
+):
+    user = _require_user(recoin_auth)
+
+    raw = await image.read()
+    if len(raw) > MAX_AVATAR_BYTES:
+        raise HTTPException(status_code=400, detail="Картинка больше 2 МБ.")
+    suffix = Path(image.filename or "").suffix.lower()
+    mimes = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
+             ".webp": "image/webp", ".gif": "image/gif"}
+    if suffix not in mimes:
+        raise HTTPException(status_code=400, detail="Подойдут png, jpg, webp и gif.")
+
+    auth.set_avatar(user.id, raw, mimes[suffix])
+    return JSONResponse(_profile_payload(auth.user_by_id(user.id)))
+
+
+@app.delete("/api/profile/avatar")
+async def drop_avatar(recoin_auth: str | None = Cookie(default=None)):
+    user = _require_user(recoin_auth)
+    auth.clear_avatar(user.id)
+    return JSONResponse(_profile_payload(auth.user_by_id(user.id)))
+
+
+@app.post("/api/feedback")
+async def feedback(
+    background: BackgroundTasks,
+    text: str = Form(...),
+    image: UploadFile | None = File(default=None),
+    recoin_auth: str | None = Cookie(default=None),
+):
+    """Отзыв пользователя. Уходит письмом, копия остаётся на диске."""
+    user = _require_user(recoin_auth)
+
+    text = (text or "").strip()
+    if not text:
+        raise HTTPException(status_code=400, detail="Напишите, что хотите сообщить.")
+    if len(text) > MAX_FEEDBACK_LENGTH:
+        raise HTTPException(status_code=400, detail="Слишком длинный текст, сократите его.")
+
+    attachment = None
+    if image is not None and image.filename:
+        raw = await image.read()
+        if len(raw) > MAX_IMAGE_BYTES:
+            raise HTTPException(status_code=400, detail="Картинка больше 5 МБ.")
+        suffix = Path(image.filename).suffix.lower()
+        if suffix not in {".png", ".jpg", ".jpeg", ".webp", ".gif"}:
+            raise HTTPException(status_code=400, detail="Поддерживаются картинки png, jpg, webp и gif.")
+        attachment = (f"otzyv{suffix}", raw)
+
+    # Копия на диске нужна, чтобы отзыв не пропал, если почта не настроена
+    # или письмо не ушло.
+    stamp = time.strftime("%Y%m%d-%H%M%S")
+    folder = FEEDBACK_DIR / f"{stamp}-{user.id}"
+    try:
+        folder.mkdir(parents=True, exist_ok=True)
+        (folder / "otzyv.txt").write_text(
+            f"От кого: {user.name} <{user.email}>\nКогда: {stamp}\n\n{text}\n",
+            encoding="utf-8",
+        )
+        if attachment:
+            (folder / attachment[0]).write_bytes(attachment[1])
+        saved = True
+    except OSError as exc:
+        log.warning("Отзыв не сохранён: %s", exc)
+        saved = False
+
+    if not saved:
+        raise HTTPException(status_code=500, detail="Отзыв не удалось сохранить. Попробуйте позже.")
+
+    # Письмо уходит после ответа: недоступный почтовый сервер отвечает
+    # не сразу, и пользователь ждал бы окончания попытки.
+    background.add_task(mailer.send_feedback, text, f"{user.name} <{user.email}>", attachment)
+
+    return JSONResponse({"ok": True})
 
 
 @app.post("/api/reset")
