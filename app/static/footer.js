@@ -3,10 +3,11 @@
 /* Знак на фоне подвала: золотая подсветка следует за курсором.
    Скрипт передаёт положение указателя в стили, остальное делает маска. */
 
+const footer = document.querySelector(".site-footer");
 const word = document.getElementById("footer-word");
 
-if (word) {
-  word.addEventListener("mousemove", (event) => {
+if (footer && word) {
+  footer.addEventListener("mousemove", (event) => {
     const box = word.getBoundingClientRect();
     if (!box.width || !box.height) return;
     word.style.setProperty("--mx", `${((event.clientX - box.left) / box.width) * 100}%`);

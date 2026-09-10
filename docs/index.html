@@ -95,12 +95,17 @@
 </main>
 
 <footer class="site-footer">
+  <!-- Знак на фоне: крупнее подвала, поэтому виден только частью. -->
+  <div class="footer-word" id="footer-word" aria-hidden="true"
+       style="--footer-word-img: url('logo-mark.png')">
+    <span class="word-base"></span>
+    <span class="word-glow"></span>
+  </div>
+
   <div class="footer-inner">
     <div class="footer-grid">
       <div class="footer-brand">
-        <span class="footer-mark">
-                <span>Re<b>Coin</b></span>
-        </span>
+        <span class="footer-mark">ReCoin</span>
         <p>Разбирает банковскую выписку и показывает, сколько денег вы потратили
            на самом деле.</p>
       </div>
@@ -132,18 +137,9 @@
     <hr class="footer-line">
 
     <div class="footer-bottom">
-      <span>&copy; <span id="footer-year">2026</span> ReCoin</span>
-      <span class="footer-links">
-        <a href="https://github.com/wst1nd1/ReCoin" rel="noopener">GitHub</a>
-      </span>
+      <span class="footer-copy">&copy; <span id="footer-year">2026</span> ReCoin</span>
+      <span>Все права защищены.</span>
     </div>
-  </div>
-
-  <!-- Знак на фоне: под курсором проявляется золотая подсветка. -->
-  <div class="footer-word" id="footer-word" aria-hidden="true"
-       style="--footer-word-img: url('logo-mark.png')">
-    <span class="word-base"></span>
-    <span class="word-glow"></span>
   </div>
 
   <div class="footer-glow" aria-hidden="true"></div>
