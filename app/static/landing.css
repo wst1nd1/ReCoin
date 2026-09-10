@@ -14,7 +14,9 @@
   --accent-soft: #fbf0da;
   --green: #12a06a;
   --line-strong: #ddd6c6;
-  --nav-bg: rgba(250, 248, 243, 0.84);
+  --nav-bg: rgba(250, 248, 243, 0.62);
+  --nav-edge: rgba(22, 36, 31, 0.08);
+  --nav-sheen: rgba(255, 255, 255, 0.6);
   --fade-0: rgba(250, 248, 243, 0);
   --fade-1: rgba(250, 248, 243, 0.86);
   --overlay: rgba(22, 36, 31, 0.42);
@@ -68,8 +70,19 @@ html, body {
   align-items: center;
   gap: 20px;
   padding: 18px clamp(20px, 5vw, 60px);
+
+  /* Полупрозрачное стекло: фон страницы просвечивает и размывается,
+     тонкая грань снизу и блик сверху отделяют шапку от содержимого. */
   background: var(--nav-bg);
-  backdrop-filter: blur(14px);
+  backdrop-filter: blur(20px) saturate(170%);
+  -webkit-backdrop-filter: blur(20px) saturate(170%);
+  border-bottom: 1px solid var(--nav-edge);
+  box-shadow: inset 0 1px 0 var(--nav-sheen);
+}
+
+/* Браузеры без размытия получают плотный фон, иначе текст теряет контраст. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .nav { background: var(--paper); }
 }
 
 .nav-actions { grid-column: 3; justify-self: end; display: flex; gap: 10px; align-items: center; }
@@ -442,7 +455,9 @@ footer {
   --accent-soft: #372c12;
   --green: #2fc08a;
 
-  --nav-bg: rgba(4, 6, 11, 0.86);
+  --nav-bg: rgba(10, 16, 30, 0.55);
+  --nav-edge: rgba(231, 237, 247, 0.09);
+  --nav-sheen: rgba(231, 237, 247, 0.06);
   --fade-0: rgba(4, 6, 11, 0);
   --fade-1: rgba(4, 6, 11, 0.86);
   --overlay: rgba(2, 4, 9, 0.68);
