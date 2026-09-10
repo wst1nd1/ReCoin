@@ -1,0 +1,27 @@
+{
+  "name": "ReCoin",
+  "image": "mcr.microsoft.com/devcontainers/python:3.13",
+
+  "postCreateCommand": "pip install --user -r requirements.txt",
+  "postAttachCommand": "uvicorn app.main:app --host 0.0.0.0 --port 8420 --workers 1",
+
+  "forwardPorts": [8420],
+  "portsAttributes": {
+    "8420": {
+      "label": "ReCoin",
+      "visibility": "public",
+      "onAutoForward": "openPreview"
+    }
+  },
+
+  "containerEnv": {
+    "RECOIN_HTTPS": "1",
+    "RECOIN_MODEL": "claude-opus-5"
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": ["ms-python.python"]
+    }
+  }
+}
