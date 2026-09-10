@@ -8,8 +8,8 @@ a.pill.ghost:visited { color: inherit; }
   margin: 0 auto 60px;
   padding: 16px 20px;
   border-radius: 12px;
-  background: #fbf0da;
-  color: #4a3608;
+  background: var(--accent-soft);
+  color: var(--gold-ink);
   font-size: 15px;
 }
 

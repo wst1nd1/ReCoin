@@ -13,6 +13,15 @@
   --accent-deep: #c08c22;
   --accent-soft: #fbf0da;
   --green: #12a06a;
+  --line-strong: #ddd6c6;
+  --nav-bg: rgba(250, 248, 243, 0.84);
+  --fade-0: rgba(250, 248, 243, 0);
+  --fade-1: rgba(250, 248, 243, 0.86);
+  --overlay: rgba(22, 36, 31, 0.42);
+  --placeholder: #aeb8b3;
+  --coral-soft: #fdeceb;
+  --coral-ink: #b23c30;
+  --gold-ink: #7a5a10;
   --font: -apple-system, "SF Pro Display", "Segoe UI", system-ui, "Helvetica Neue", Arial, sans-serif;
 }
 
@@ -57,7 +66,7 @@ html, body {
   align-items: center;
   gap: 20px;
   padding: 18px clamp(20px, 5vw, 60px);
-  background: rgba(250, 248, 243, 0.84);
+  background: var(--nav-bg);
   backdrop-filter: blur(14px);
 }
 
@@ -99,7 +108,7 @@ html, body {
   color: var(--ink);
   box-shadow: inset 0 0 0 1px var(--line);
 }
-.pill.ghost:hover { background: var(--paper-2); box-shadow: inset 0 0 0 1px #ddd6c6; transform: translateY(-1px); }
+.pill.ghost:hover { background: var(--paper-2); box-shadow: inset 0 0 0 1px var(--line-strong); transform: translateY(-1px); }
 
 .pill.big { padding: 15px 30px; font-size: 16px; border-radius: 12px; }
 .pill.full { width: 100%; margin-left: 0; }
@@ -137,7 +146,7 @@ html, body {
   content: "";
   position: absolute;
   inset: 22% 0 0;
-  background: linear-gradient(180deg, rgba(250, 248, 243, 0) 0%, rgba(250, 248, 243, 0.86) 58%, var(--paper) 88%);
+  background: linear-gradient(180deg, var(--fade-0) 0%, var(--fade-1) 58%, var(--paper) 88%);
   z-index: 1;
 }
 
@@ -197,7 +206,7 @@ h2 {
               box-shadow 0.28s, border-color 0.28s, transform 0.28s;
 }
 
-.cards article:hover { border-color: #e0d7c2; box-shadow: 0 10px 28px rgba(22, 36, 31, 0.07); transform: translateY(-2px); }
+.cards article:hover { border-color: var(--line-strong); box-shadow: 0 10px 28px rgba(22, 36, 31, 0.07); transform: translateY(-2px); }
 
 .cards article.open {
   flex-grow: 2.6;
@@ -261,7 +270,7 @@ footer {
   display: grid;
   place-items: center;
   padding: 20px;
-  background: rgba(22, 36, 31, 0.42);
+  background: var(--overlay);
   backdrop-filter: blur(4px);
   animation: fade 0.16s ease both;
 }
@@ -320,14 +329,14 @@ footer {
   box-shadow: 0 0 0 3px var(--accent-soft);
   outline: none;
 }
-.field input::placeholder { color: #aeb8b3; }
+.field input::placeholder { color: var(--placeholder); }
 
 .form-error {
   margin: 4px 0 14px;
   padding: 11px 14px;
   border-radius: 10px;
-  background: #fdeceb;
-  color: #b23c30;
+  background: var(--coral-soft);
+  color: var(--coral-ink);
   font-size: 14px;
   animation: shake 0.32s ease both;
 }
@@ -337,7 +346,7 @@ footer {
   padding: 11px 14px;
   border-radius: 10px;
   background: var(--accent-soft);
-  color: #7a5a10;
+  color: var(--gold-ink);
   font-size: 13.5px;
 }
 
@@ -362,7 +371,7 @@ footer {
   left: 2px; top: 6px;
   width: 9px; height: 9px;
   border-radius: 50%;
-  border: 1.5px solid #cfc9ba;
+  border: 1.5px solid var(--line-strong);
   transition: border-color 0.18s, background 0.18s;
 }
 .rules li.ok { color: var(--green); }
@@ -404,7 +413,46 @@ footer {
   .nav { gap: 12px; padding: 14px 16px; }
   .mark { font-size: 17px; }
   .mark img { width: 26px; }
-  .nav-actions { gap: 8px; }
-  .pill { padding: 10px 16px; font-size: 14px; }
+  .nav-actions { gap: 6px; }
+  .nav-actions .theme-toggle { --tt-h: 30px; }
+  .pill { padding: 10px 14px; font-size: 14px; }
   .hero-actions .pill.big { width: 100%; }
 }
+
+/* ---------- тёмная тема ---------- */
+
+/* Подложка страницы чёрная, карточки и окна – глубокого синего оттенка. */
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --ink: #e7edf7;
+  --ink-soft: #b3c0d4;
+  --dim: #7f8da6;
+  --line: #1d2b45;
+  --line-strong: #2b3d5e;
+  --paper: #04060b;
+  --paper-2: #0e1729;
+  --card: #101b30;
+  --dark: #0a1220;
+  --accent: #e0ae45;
+  --accent-ink: #2a1e05;
+  --accent-text: #e7c377;
+  --accent-deep: #c9942c;
+  --accent-soft: #372c12;
+  --green: #2fc08a;
+
+  --nav-bg: rgba(4, 6, 11, 0.86);
+  --fade-0: rgba(4, 6, 11, 0);
+  --fade-1: rgba(4, 6, 11, 0.86);
+  --overlay: rgba(2, 4, 9, 0.68);
+  --placeholder: #66748e;
+  --coral-soft: #331a1c;
+  --coral-ink: #f0a397;
+  --gold-ink: #e7c377;
+}
+
+[data-theme="dark"] .cards article:hover { box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5); }
+[data-theme="dark"] .modal-card { box-shadow: 0 24px 70px rgba(0, 0, 0, 0.65); }
+
+/* Золотой рисунок героя на чёрной подложке приглушается. */
+[data-theme="dark"] .hero-art svg { opacity: 0.55; }

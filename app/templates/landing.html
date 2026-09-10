@@ -5,7 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ReCoin – сколько вы потратили на самом деле</title>
 <link rel="stylesheet" href="/static/landing.css">
+<link rel="stylesheet" href="/static/theme-toggle.css">
 <link rel="icon" href="/static/logo.png" type="image/png">
+<script src="/static/theme-init.js"></script>
 </head>
 <body>
 
@@ -16,6 +18,7 @@
   </a>
 
   <div class="nav-actions">
+    <button class="theme-toggle" aria-label="Включить тёмную тему"></button>
     <button class="pill ghost" data-open-auth="login">Войти</button>
     <button class="pill" data-open-auth="register">Регистрация</button>
   </div>
@@ -151,6 +154,7 @@
   </div>
 </div>
 
+<script src="/static/theme.js"></script>
 <script src="/static/landing.js"></script>
 </body>
 </html>

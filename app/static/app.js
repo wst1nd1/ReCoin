@@ -57,6 +57,9 @@ const CAT_COLORS = {
   "Прочее": "#8a8578",
 };
 
+// Цвет для категорий, которых нет в списке выше.
+const FALLBACK_COLOR = "#8fa0bb";
+
 const state = {
   step: 0,
   reached: 0,
@@ -74,7 +77,7 @@ function money(value) {
 }
 
 function catColor(name) {
-  return CAT_COLORS[name] || "#cfd4dd";
+  return CAT_COLORS[name] || FALLBACK_COLOR;
 }
 
 function plural(n, one, few, many) {
@@ -504,8 +507,8 @@ function donut(categories) {
     <div class="donut-holder" id="donut-holder">
       <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"
            role="img" aria-label="Доли категорий трат" id="donut">
-        <circle cx="${size / 2}" cy="${size / 2}" r="${r}" fill="none"
-                stroke="#eef1ee" stroke-width="${stroke}"/>
+        <circle class="donut-track" cx="${size / 2}" cy="${size / 2}" r="${r}" fill="none"
+                stroke-width="${stroke}"/>
         ${arcs}
       </svg>
       <div class="donut-center" id="donut-center">
@@ -793,13 +796,13 @@ function ring(score) {
   const color = score >= 70 ? "#12a06a" : score >= 45 ? "#e8b04b" : "#d9584a";
   return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" role="img"
       aria-label="Оценка ${score} из 100">
-    <circle cx="${size / 2}" cy="${size / 2}" r="${r}" fill="none" stroke="#e8ebe7" stroke-width="${stroke}"/>
+    <circle class="ring-track" cx="${size / 2}" cy="${size / 2}" r="${r}" fill="none" stroke-width="${stroke}"/>
     <circle class="ring-fill" id="ring-fill" cx="${size / 2}" cy="${size / 2}" r="${r}" fill="none"
       stroke="${color}" stroke-width="${stroke}" stroke-linecap="round"
       stroke-dasharray="0 ${c}" data-fill="${filled.toFixed(2)} ${(c - filled).toFixed(2)}"
       transform="rotate(-90 ${size / 2} ${size / 2})"/>
-    <text x="${size / 2}" y="${size / 2 + 3}" text-anchor="middle" fill="#16241f" font-size="30" font-weight="500" class="num">${score}</text>
-    <text x="${size / 2}" y="${size / 2 + 21}" text-anchor="middle" fill="#86928d" font-size="11">из 100</text>
+    <text x="${size / 2}" y="${size / 2 + 3}" text-anchor="middle" font-size="30" font-weight="500" class="num ring-score">${score}</text>
+    <text x="${size / 2}" y="${size / 2 + 21}" text-anchor="middle" font-size="11" class="ring-cap">из 100</text>
   </svg>`;
 }
 

@@ -5,7 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ReCoin – кабинет</title>
 <link rel="stylesheet" href="/static/app.css">
+<link rel="stylesheet" href="/static/theme-toggle.css">
 <link rel="icon" href="/static/logo.png" type="image/png">
+<script src="/static/theme-init.js"></script>
 </head>
 <body>
 
@@ -37,6 +39,8 @@
       </div>
 
       <div class="topbar-right">
+        <button class="theme-toggle" aria-label="Включить тёмную тему"></button>
+
         <div class="user-wrap">
           <button class="user" id="user-btn" aria-expanded="false" aria-haspopup="menu">
             <span class="avatar">{{ user.initials }}</span>
@@ -251,6 +255,7 @@
   </div>
 </div>
 
+<script src="/static/theme.js"></script>
 <script src="/static/app.js"></script>
 </body>
 </html>

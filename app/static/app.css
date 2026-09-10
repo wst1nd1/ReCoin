@@ -19,6 +19,15 @@
   --coral-soft: #fbeae8;
   --gold-light: #edd08a;
   --ocean: #2f7fa8;
+  --coral-ink: #a8392c;     /* текст ошибки на светлой заливке */
+  --gold-ink: #7a5a10;      /* текст подсказки на золотой заливке */
+  --sand-ink: #b8801f;
+  --tip-bg: rgba(22, 36, 31, 0.92);
+  --tip-ink: #ffffff;
+  --overlay: rgba(22, 36, 31, 0.42);
+  --placeholder: #a9b4af;
+  --hover-soft: #fbfaf7;
+  --hover-warm: #fffdf6;
 
   --radius: 22px;
   --radius-sm: 14px;
@@ -209,7 +218,7 @@ html, body {
 .btn[disabled] { opacity: 0.5; cursor: not-allowed; transform: none; }
 
 .btn.ghost { background: var(--card); color: var(--ink); box-shadow: var(--shadow); }
-.btn.ghost:hover { background: #fbfaf7; box-shadow: var(--shadow-hover); }
+.btn.ghost:hover { background: var(--hover-soft); box-shadow: var(--shadow-hover); }
 
 .actions { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; align-items: center; }
 
@@ -225,7 +234,7 @@ html, body {
   cursor: pointer;
   transition: border-color 0.2s, background 0.2s, transform 0.2s;
 }
-.drop:hover, .drop.hot { border-color: var(--accent); background: #fffdf6; transform: translateY(-2px); }
+.drop:hover, .drop.hot { border-color: var(--accent); background: var(--hover-warm); transform: translateY(-2px); }
 .drop .coin { width: 56px; height: auto; margin-bottom: 16px; transition: transform 0.3s; }
 .drop:hover .coin { transform: scale(1.05); }
 .drop.busy .coin { animation: flip 1.15s cubic-bezier(0.45, 0.05, 0.35, 1) infinite; }
@@ -264,7 +273,7 @@ html, body {
 
 .err {
   background: var(--coral-soft);
-  color: #a8392c;
+  color: var(--coral-ink);
   border-radius: var(--radius-sm);
   padding: 14px 18px;
   font-size: 14px;
@@ -412,7 +421,7 @@ select:hover { border-color: var(--accent); }
 .stat b { display: block; font-size: 25px; font-weight: 500; letter-spacing: -0.025em; margin-bottom: 2px; }
 .stat span { color: var(--dim); font-size: 13px; }
 .stat.accent b { color: var(--accent); }
-.stat.sand b { color: #b8801f; }
+.stat.sand b { color: var(--sand-ink); }
 .stat.coral b { color: var(--coral); }
 .stat.green b { color: var(--green); }
 
@@ -504,8 +513,8 @@ select:hover { border-color: var(--accent); }
   position: absolute;
   pointer-events: none;
   transform: translate(-50%, -140%);
-  background: rgba(22, 36, 31, 0.92);
-  color: #fff;
+  background: var(--tip-bg);
+  color: var(--tip-ink);
   border-radius: 11px;
   padding: 7px 13px;
   font-size: 13.5px;
@@ -521,7 +530,7 @@ select:hover { border-color: var(--accent); }
   transform: translateX(-50%);
   border-left: 7px solid transparent;
   border-right: 7px solid transparent;
-  border-top: 7px solid rgba(22, 36, 31, 0.92);
+  border-top: 7px solid var(--tip-bg);
 }
 .chart-tip small { display: block; font-weight: 400; opacity: 0.7; font-size: 11.5px; }
 
@@ -619,7 +628,7 @@ textarea {
   transition: border-color 0.16s, box-shadow 0.16s;
 }
 textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); outline: none; }
-textarea::placeholder { color: #a9b4af; }
+textarea::placeholder { color: var(--placeholder); }
 
 /* ---------- отчёт ---------- */
 
@@ -866,7 +875,7 @@ textarea::placeholder { color: #a9b4af; }
   display: grid;
   place-items: center;
   padding: 20px;
-  background: rgba(22, 36, 31, 0.42);
+  background: var(--overlay);
   backdrop-filter: blur(4px);
 }
 
@@ -930,7 +939,7 @@ textarea::placeholder { color: #a9b4af; }
   padding: 10px 13px;
   border-radius: 10px;
   background: var(--coral-soft);
-  color: #a8392c;
+  color: var(--coral-ink);
   font-size: 13.5px;
 }
 .form-note {
@@ -938,7 +947,7 @@ textarea::placeholder { color: #a9b4af; }
   padding: 10px 13px;
   border-radius: 10px;
   background: var(--accent-soft);
-  color: #7a5a10;
+  color: var(--gold-ink);
   font-size: 13px;
 }
 
@@ -994,3 +1003,54 @@ textarea::placeholder { color: #a9b4af; }
 @media (max-width: 560px) {
   .profile-row { grid-template-columns: 1fr; gap: 3px; }
 }
+
+/* Служебные цвета диаграмм: рисуются скриптом, поэтому заданы классами. */
+.donut-track, .ring-track { stroke: var(--line); }
+.ring-score { fill: var(--ink); }
+.ring-cap { fill: var(--dim); }
+
+/* ---------- тёмная тема ---------- */
+
+/* Подложка страницы становится чёрной, все светлые поверхности –
+   глубоким синим. Золотой остаётся основным цветом продукта. */
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --bg: #04060b;
+  --card: #101b30;
+  --ink: #e7edf7;
+  --ink-soft: #b3c0d4;
+  --dim: #7f8da6;
+  --line: #1d2b45;
+  --line-strong: #2b3d5e;
+
+  --accent: #e0ae45;
+  --accent-ink: #2a1e05;
+  --accent-deep: #c9942c;
+  --accent-soft: #372c12;
+  --sand: #e8b04b;
+  --sand-soft: #372c12;
+  --green: #2fc08a;
+  --green-soft: #0e2c21;
+  --coral: #e87264;
+  --coral-soft: #331a1c;
+  --gold-light: #edd08a;
+  --ocean: #57a8cf;
+
+  --coral-ink: #f0a397;
+  --gold-ink: #e7c377;
+  --sand-ink: #e0a944;
+  --tip-bg: rgba(16, 27, 48, 0.96);
+  --tip-ink: #eef3fb;
+  --overlay: rgba(2, 4, 9, 0.68);
+  --placeholder: #66748e;
+  --hover-soft: #16233c;
+  --hover-warm: #1a2540;
+
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 10px 28px rgba(0, 0, 0, 0.45);
+  --shadow-hover: 0 2px 6px rgba(0, 0, 0, 0.55), 0 16px 38px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="dark"] .modal-card { box-shadow: 0 24px 70px rgba(0, 0, 0, 0.6); }
+[data-theme="dark"] .promo .btn { background: #23324e; color: #f3d69a; }
+[data-theme="dark"] .promo .btn:hover { background: #2c3d5e; }
