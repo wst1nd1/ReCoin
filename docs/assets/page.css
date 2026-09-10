@@ -20,3 +20,10 @@ a.pill[aria-disabled="true"] {
   pointer-events: none;
   box-shadow: none;
 }
+
+/* Ссылки в подвале, пока адрес приложения не задан. */
+.site-footer a[aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: default;
+  pointer-events: none;
+}

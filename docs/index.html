@@ -95,11 +95,88 @@
   </section>
 </main>
 
-<footer>
-  <span>ReCoin – разбор трат по банковской выписке</span>
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <span class="footer-mark">
+          <img src="assets/logo-mark.png" alt="">
+          <span>Re<b>Coin</b></span>
+        </span>
+        <p>Разбирает банковскую выписку и показывает, сколько денег вы потратили
+           на самом деле.</p>
+      </div>
+
+      <div>
+        <h4>Сервис</h4>
+        <ul>
+          <li><a href="#how">Что делает ReCoin</a></li>
+          <li><a href="#" data-app-link>Разобрать выписку</a></li>
+          <li><a href="#" data-app-link>Войти</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <h4>Разработка</h4>
+        <ul>
+          <li><a href="https://github.com/wst1nd1/ReCoin" rel="noopener">Исходный код</a></li>
+          <li><a href="https://github.com/wst1nd1/ReCoin/issues" rel="noopener">Сообщить об ошибке</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <h4>Данные</h4>
+        <p class="footer-note">Разобранные выписки на диск не пишутся: они живут
+           в памяти сервера и исчезают при перезапуске.</p>
+      </div>
+    </div>
+
+    <hr class="footer-line">
+
+    <div class="footer-bottom">
+      <span>&copy; <span id="footer-year">2026</span> ReCoin</span>
+      <span class="footer-links">
+        <a href="https://github.com/wst1nd1/ReCoin" rel="noopener">GitHub</a>
+      </span>
+    </div>
+  </div>
+
+  <!-- Название на фоне: контур проявляется под курсором. -->
+  <div class="footer-word">
+    <svg id="footer-word" viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg"
+         role="img" aria-label="ReCoin">
+      <defs>
+        <linearGradient id="footerWordGradient" gradientUnits="userSpaceOnUse"
+                        x1="0" y1="0" x2="300" y2="100">
+          <stop offset="0%" stop-color="#e8b04b"/>
+          <stop offset="30%" stop-color="#d9a336"/>
+          <stop offset="60%" stop-color="#12a06a"/>
+          <stop offset="100%" stop-color="#2f7fa8"/>
+        </linearGradient>
+
+        <radialGradient id="footerWordMask" gradientUnits="userSpaceOnUse"
+                        r="52" cx="150" cy="50">
+          <stop offset="0%" stop-color="#ffffff"/>
+          <stop offset="100%" stop-color="#000000"/>
+        </radialGradient>
+
+        <mask id="footerWordReveal" maskUnits="userSpaceOnUse" x="0" y="0" width="300" height="100">
+          <rect x="0" y="0" width="300" height="100" fill="url(#footerWordMask)"/>
+        </mask>
+      </defs>
+
+      <text class="word-base" x="150" y="50" text-anchor="middle" dominant-baseline="middle">ReCoin</text>
+      <text class="word-draw" x="150" y="50" text-anchor="middle" dominant-baseline="middle">ReCoin</text>
+      <text class="word-glow" x="150" y="50" text-anchor="middle" dominant-baseline="middle"
+            mask="url(#footerWordReveal)">ReCoin</text>
+    </svg>
+  </div>
+
+  <div class="footer-glow" aria-hidden="true"></div>
 </footer>
 
 <script src="assets/theme.js"></script>
+<script src="assets/footer.js"></script>
 <script src="assets/page.js"></script>
 <script src="assets/app-url.js"></script>
 </body>
