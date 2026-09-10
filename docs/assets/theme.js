@@ -49,16 +49,14 @@ const setTheme = (theme) => {
 const buildToggle = (btn) => {
   btn.type = "button";
   btn.setAttribute("role", "switch");
-  btn.innerHTML =
-    `<span class="tt-icons">${SUN}${MOON}</span>` +
-    `<span class="tt-thumb"><span class="tt-burst"><i></i><i></i><i></i></span>${SUN}${MOON}</span>`;
+  btn.innerHTML = `<span class="tt-thumb">${SUN}${MOON}</span>`;
 
   btn.addEventListener("click", () => {
     setTheme(currentTheme() === "dark" ? "light" : "dark");
-    btn.classList.remove("burst");
-    // Пауза в один кадр перезапускает анимацию вспышки.
-    requestAnimationFrame(() => btn.classList.add("burst"));
-    setTimeout(() => btn.classList.remove("burst"), 1000);
+    btn.classList.remove("flip");
+    // Пауза в один кадр перезапускает поворот значка.
+    requestAnimationFrame(() => btn.classList.add("flip"));
+    setTimeout(() => btn.classList.remove("flip"), 400);
   });
 };
 

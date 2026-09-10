@@ -27,6 +27,8 @@
   --overlay: rgba(22, 36, 31, 0.42);
   --placeholder: #a9b4af;
   --hover-soft: #fbfaf7;
+  --tt-track: rgba(22, 36, 31, 0.15);
+  --tt-thumb-bg: var(--card);
   --hover-warm: #fffdf6;
 
   --radius: 22px;
@@ -1045,6 +1047,8 @@ textarea::placeholder { color: var(--placeholder); }
   --overlay: rgba(2, 4, 9, 0.68);
   --placeholder: #66748e;
   --hover-soft: #16233c;
+  --tt-track: rgba(231, 237, 247, 0.15);
+  --tt-thumb-bg: var(--card);
   --hover-warm: #1a2540;
 
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 10px 28px rgba(0, 0, 0, 0.45);
