@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ReCoin – сколько вы потратили на самом деле</title>
+<meta name="description" content="ReCoin разбирает банковскую выписку и отделяет настоящие траты от переводов себе, возвратов долгов и платежей по кредитке.">
+<link rel="stylesheet" href="assets/landing.css">
+<link rel="stylesheet" href="assets/page.css">
+<link rel="icon" href="assets/logo.png" type="image/png">
+</head>
+<body>
+
+<header class="nav">
+  <a class="mark" href="./">
+    <img src="assets/logo.png" alt="">
+    <span>Re<b>Coin</b></span>
+  </a>
+
+  <div class="nav-actions">
+    <a class="pill ghost" data-app-link href="#">Войти</a>
+    <a class="pill" data-app-link href="#">Открыть приложение</a>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="hero-art" aria-hidden="true">
+      <svg viewBox="0 0 1200 620" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="sweep" x1="0" y1="0" x2="1" y2="0.35">
+            <stop offset="0"    stop-color="#faeed6"/>
+            <stop offset="0.24" stop-color="#f4e0b6"/>
+            <stop offset="0.48" stop-color="#eed296"/>
+            <stop offset="0.7"  stop-color="#e7c274"/>
+            <stop offset="0.87" stop-color="#dfb254"/>
+            <stop offset="1"    stop-color="#d5a338"/>
+          </linearGradient>
+          <filter id="soften" x="-10%" y="-10%" width="120%" height="120%">
+            <feGaussianBlur stdDeviation="0.9"/>
+          </filter>
+        </defs>
+        <g filter="url(#soften)" fill="url(#sweep)">
+          <path d="M-60 0 L170 0 L400 310 L170 620 L-60 620 L170 310 Z" opacity="1"/>
+          <path d="M150 0 L380 0 L610 310 L380 620 L150 620 L380 310 Z" opacity=".9"/>
+          <path d="M360 0 L590 0 L820 310 L590 620 L360 620 L590 310 Z" opacity=".8"/>
+          <path d="M570 0 L800 0 L1030 310 L800 620 L570 620 L800 310 Z" opacity=".7"/>
+          <path d="M780 0 L1010 0 L1240 310 L1010 620 L780 620 L1010 310 Z" opacity=".6"/>
+          <path d="M990 0 L1220 0 L1450 310 L1220 620 L990 620 L1220 310 Z" opacity=".5"/>
+        </g>
+      </svg>
+    </div>
+
+    <div class="hero-copy">
+      <h1>Банк показывает обороты.<br>Мы показываем траты.</h1>
+      <div class="hero-actions">
+        <a class="pill big" data-app-link href="#">Разобрать свою выписку</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="how reveal" id="how">
+    <h2>Что делает ReCoin</h2>
+    <div class="cards" id="cards">
+      <article tabindex="0" role="button" aria-expanded="false">
+        <h3>Читает выписку</h3>
+        <p class="short">PDF из банка превращается в разобранные операции.</p>
+        <p class="full"><span>Дата, сумма, магазин и категория по каждой операции.
+           Итоги сверяются с напечатанными в выписке. Если сумма не сошлась,
+           приложение сообщит об этом.</span></p>
+      </article>
+      <article tabindex="0" role="button" aria-expanded="false">
+        <h3>Отделяет траты от переводов</h3>
+        <p class="short">Перевод себе тратой не является.</p>
+        <p class="full"><span>Деньги на вкладе остаются вашими, возвращённый долг тратой не был,
+           платёж по кредитке гасит долг. Три случая считаются по-разному, и в итоговую
+           сумму попадает только потраченное.</span></p>
+      </article>
+      <article tabindex="0" role="button" aria-expanded="false">
+        <h3>Задаёт вопросы и разбирает</h3>
+        <p class="short">Советы с расчётом экономии в рублях.</p>
+        <p class="full"><span>Спрашивает то, чего нет в выписке: цели, намерения,
+           обязательность трат. По ответам собирает разбор с оценкой экономии
+           за год по каждому совету.</span></p>
+      </article>
+    </div>
+  </section>
+
+  <section class="note reveal" id="soon" hidden>
+    <p>Приложение ещё разворачивается. Страница обновится, как только появится
+       рабочий адрес.</p>
+  </section>
+</main>
+
+<footer>
+  <span>ReCoin – разбор трат по банковской выписке</span>
+</footer>
+
+<script src="assets/page.js"></script>
+<script src="assets/app-url.js"></script>
+</body>
+</html>

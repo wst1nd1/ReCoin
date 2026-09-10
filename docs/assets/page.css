@@ -1,0 +1,22 @@
+/* Правки для статической страницы: кнопки заменены ссылками. */
+a.pill { display: inline-block; text-decoration: none; text-align: center; }
+a.pill:visited { color: var(--accent-ink); }
+a.pill.ghost:visited { color: inherit; }
+
+.note {
+  max-width: 780px;
+  margin: 0 auto 60px;
+  padding: 16px 20px;
+  border-radius: 12px;
+  background: #fbf0da;
+  color: #4a3608;
+  font-size: 15px;
+}
+
+/* Пока адрес приложения не задан, кнопки неактивны. */
+a.pill[aria-disabled="true"] {
+  opacity: 0.55;
+  cursor: default;
+  pointer-events: none;
+  box-shadow: none;
+}
