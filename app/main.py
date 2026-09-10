@@ -15,7 +15,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.requests import Request
 
-from . import agent, analytics, auth, fallback, netting, portfolio
+from . import agent, analytics, auth, fallback, mailer, netting, portfolio
 from .categorizer import categorize_all, clean_merchant
 from .config import get_settings
 from .parser import parse_statement
@@ -81,6 +81,20 @@ def _get_session(user: auth.User) -> Session:
 
 def _money(value: Decimal | int | float) -> int:
     return int(round(float(value)))
+
+
+def _asset_version() -> str:
+    """Метка для адресов стилей и скриптов.
+
+    Без неё браузер продолжает отдавать файлы из своего хранилища, и правки
+    в оформлении не видны до принудительного обновления страницы.
+    """
+    static = BASE_DIR / "static"
+    try:
+        newest = max(item.stat().st_mtime for item in static.iterdir() if item.is_file())
+    except (OSError, ValueError):
+        return "0"
+    return str(int(newest))
 
 
 def _build_state(session: Session) -> dict[str, Any]:
@@ -226,7 +240,9 @@ async def index(request: Request, recoin_auth: str | None = Cookie(default=None)
     """Гостю – витрина, вошедшему – сразу рабочий кабинет."""
     if auth.user_for_token(recoin_auth):
         return RedirectResponse("/app", status_code=303)
-    return templates.TemplateResponse(request, "landing.html", {"request": request})
+    return templates.TemplateResponse(
+        request, "landing.html", {"request": request, "v": _asset_version()}
+    )
 
 
 @app.get("/app", response_class=HTMLResponse)
@@ -237,7 +253,11 @@ async def workspace(request: Request, recoin_auth: str | None = Cookie(default=N
     return templates.TemplateResponse(
         request,
         "app.html",
-        {"request": request, "user": {"name": user.name, "email": user.email, "initials": user.initials}},
+        {
+            "request": request,
+            "v": _asset_version(),
+            "user": {"name": user.name, "email": user.email, "initials": user.initials},
+        },
     )
 
 
@@ -257,11 +277,50 @@ def _auth_response(user: auth.User) -> JSONResponse:
 
 @app.post("/api/auth/register")
 async def register(body: dict):
+    password = body.get("password", "")
+    if password != body.get("password_repeat", password):
+        raise HTTPException(status_code=400, detail="Пароли не совпадают.")
     try:
         user = auth.register(
             email=body.get("email", ""),
-            password=body.get("password", ""),
+            password=password,
             name=body.get("name", ""),
+        )
+    except auth.AuthError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return _auth_response(user)
+
+
+@app.post("/api/auth/reset/request")
+async def reset_request(body: dict):
+    """Выслать код восстановления на почту."""
+    email = body.get("email", "")
+    issued = auth.create_reset_code(email)
+
+    if issued is not None:
+        code, name = issued
+        mailer.send_reset_code(auth.normalize_email(email), code, name)
+
+    # Ответ одинаковый независимо от того, есть такая почта или нет,
+    # иначе по нему можно перебирать зарегистрированные адреса.
+    return JSONResponse({
+        "ok": True,
+        "message": "Если такая почта зарегистрирована, код отправлен на неё.",
+        "mail_configured": mailer.smtp_configured(),
+    })
+
+
+@app.post("/api/auth/reset/confirm")
+async def reset_confirm(body: dict):
+    """Сменить пароль по коду из письма."""
+    password = body.get("password", "")
+    if password != body.get("password_repeat", password):
+        raise HTTPException(status_code=400, detail="Пароли не совпадают.")
+    try:
+        user = auth.reset_password(
+            email=body.get("email", ""),
+            code=body.get("code", ""),
+            new_password=password,
         )
     except auth.AuthError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc

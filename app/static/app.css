@@ -7,16 +7,17 @@
   --line: #e8ebe7;
   --line-strong: #dbe0db;
 
-  --accent: #0f8a7e;        /* бирюзовый – основной цвет */
-  --accent-deep: #0c7268;
-  --accent-soft: #e0f2ef;
+  --accent: #d9a336;        /* золотой – основной цвет */
+  --accent-ink: #4a3608;    /* текст и значки на золотой заливке */
+  --accent-deep: #c08c22;
+  --accent-soft: #fbf0da;
   --sand: #e8b04b;          /* песочный акцент для активного пункта */
   --sand-soft: #fbf0da;
   --green: #12a06a;
   --green-soft: #e2f5ec;
   --coral: #d9584a;
   --coral-soft: #fbeae8;
-  --teal-2: #3aa8a0;
+  --gold-light: #edd08a;
   --ocean: #2f7fa8;
 
   --radius: 22px;
@@ -138,7 +139,7 @@ html, body {
   display: grid;
   place-items: center;
   background: var(--accent);
-  color: #fff;
+  color: var(--accent-ink);
   font-size: 13px;
   font-weight: 600;
 }
@@ -199,11 +200,11 @@ html, body {
   font-weight: 560;
   cursor: pointer;
   background: var(--accent);
-  color: #fff;
+  color: var(--accent-ink);
   transition: background 0.16s, transform 0.14s, box-shadow 0.16s;
-  box-shadow: 0 3px 12px rgba(15, 138, 126, 0.2);
+  box-shadow: 0 3px 12px rgba(217, 163, 54, 0.2);
 }
-.btn:hover { background: var(--accent-deep); transform: translateY(-1px); box-shadow: 0 6px 18px rgba(15, 138, 126, 0.26); }
+.btn:hover { background: var(--accent-deep); transform: translateY(-1px); box-shadow: 0 6px 18px rgba(217, 163, 54, 0.26); }
 .btn:active { transform: translateY(0); }
 .btn[disabled] { opacity: 0.5; cursor: not-allowed; transform: none; }
 
@@ -224,7 +225,7 @@ html, body {
   cursor: pointer;
   transition: border-color 0.2s, background 0.2s, transform 0.2s;
 }
-.drop:hover, .drop.hot { border-color: var(--accent); background: #fbfefd; transform: translateY(-2px); }
+.drop:hover, .drop.hot { border-color: var(--accent); background: #fffdf6; transform: translateY(-2px); }
 .drop .coin { width: 56px; height: auto; margin-bottom: 16px; transition: transform 0.3s; }
 .drop:hover .coin { transform: scale(1.05); }
 .drop.busy .coin { animation: flip 1.15s cubic-bezier(0.45, 0.05, 0.35, 1) infinite; }
@@ -329,7 +330,39 @@ select:hover { border-color: var(--accent); }
 
 .grid { display: grid; gap: 14px; }
 .grid.two { grid-template-columns: 1.35fr 1fr; }
+.grid.three { grid-template-columns: repeat(3, 1fr); }
 .grid.four { grid-template-columns: repeat(4, 1fr); }
+
+/* Карточка с пояснением: свёрнутая показывает только цифру, по нажатию
+   раскрывает текст и растягивает строку под себя. */
+.card.explain { cursor: pointer; align-self: start; }
+.card.explain::after {
+  content: "";
+  position: absolute;
+  top: 26px; right: 24px;
+  width: 9px; height: 9px;
+  border-right: 1.7px solid var(--dim);
+  border-bottom: 1.7px solid var(--dim);
+  transform: rotate(45deg);
+  transition: transform 0.32s cubic-bezier(0.3, 0.8, 0.35, 1), border-color 0.2s;
+}
+.card.explain { position: relative; }
+.card.explain.open::after { transform: rotate(-135deg); border-color: var(--accent); }
+.card.explain.open { box-shadow: var(--shadow-hover); }
+
+.explain-body {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition: grid-template-rows 0.38s cubic-bezier(0.3, 0.8, 0.35, 1), opacity 0.28s;
+}
+.explain-body > span {
+  overflow: hidden;
+  font-size: 13.5px;
+  color: var(--ink-soft);
+  line-height: 1.5;
+}
+.card.explain.open .explain-body { grid-template-rows: 1fr; opacity: 1; margin-top: 12px; }
 
 .verdict {
   background: var(--card);
@@ -532,7 +565,7 @@ select:hover { border-color: var(--accent); }
   display: block;
   height: 100%;
   border-radius: 5px;
-  background: linear-gradient(90deg, var(--accent), var(--teal-2));
+  background: linear-gradient(90deg, var(--accent), var(--gold-light));
   width: 0;
   transition: width 0.85s cubic-bezier(0.25, 0.8, 0.3, 1);
 }
@@ -650,14 +683,32 @@ textarea::placeholder { color: #a9b4af; }
   border-radius: var(--radius);
   padding: 26px 28px;
   color: #fff;
-  background: linear-gradient(135deg, var(--accent-deep) 0%, var(--accent) 48%, var(--teal-2) 100%);
+  background: linear-gradient(135deg, var(--accent-deep) 0%, var(--accent) 45%, var(--gold-light) 100%);
   position: relative;
   overflow: hidden;
 }
 .promo h3 { margin: 0 0 8px; font-size: 20px; font-weight: 600; letter-spacing: -0.02em; color: #fff; }
-.promo p { margin: 0 0 16px; font-size: 14px; opacity: 0.92; max-width: 40ch; }
-.promo .btn { background: #fff; color: var(--accent-deep); box-shadow: none; }
-.promo .btn:hover { background: #f0faf8; }
+.promo p { margin: 0 0 16px; font-size: 14px; opacity: 0.95; max-width: 40ch; }
+.promo .btn { background: #fff; color: #8a6412; box-shadow: none; }
+.promo .btn:hover { background: #fdf6e6; }
+
+.promo-actions { display: flex; gap: 9px; flex-wrap: wrap; }
+.promo .btn.quiet {
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.45);
+}
+.promo .btn.quiet:hover { background: rgba(255, 255, 255, 0.26); }
+.promo .btn.quiet[disabled] { opacity: 0.55; }
+
+.promo-answer {
+  margin: 14px 0 0;
+  font-size: 13.5px;
+  line-height: 1.5;
+  opacity: 0.95;
+  max-width: 44ch;
+  animation: blockIn 0.35s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
 
 /* ---------- служебное ---------- */
 
@@ -680,7 +731,7 @@ textarea::placeholder { color: #a9b4af; }
 }
 
 @media (max-width: 1000px) {
-  .grid.two, .grid.four, .grid-upload { grid-template-columns: 1fr; }
+  .grid.two, .grid.three, .grid.four, .grid-upload { grid-template-columns: 1fr; }
   .verdict { grid-template-columns: 1fr; }
   .verdict aside { border-left: 0; border-top: 1px solid var(--line); padding-left: 0; padding-top: 20px; }
   .lists { grid-template-columns: 1fr; }

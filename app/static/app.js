@@ -1,37 +1,54 @@
 "use strict";
 
+// Значки разделов. Кнопка в боковой панели показывает тот, что соответствует
+// открытому разделу.
+const ICONS = {
+  upload: '<svg viewBox="0 0 24 24"><path d="M6 3h8l4 4v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v5h4"/></svg>',
+  accounts: '<svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h4"/></svg>',
+  dash: '<svg viewBox="0 0 24 24"><path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/></svg>',
+  questions: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.6 2.6 0 1 1 3.3 2.5c-.6.2-.8.7-.8 1.3v.4"/><circle cx="12" cy="17" r=".6" fill="currentColor"/></svg>',
+  report: '<svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9h-9V3z"/></svg>',
+};
+
 const STEPS = [
-  { id: "s-upload", title: "Выписки",
+  { id: "s-upload", slug: "vypiski", icon: "upload", group: 0, title: "Выписки",
     sub: "Загрузите PDF из банка – разберём операции и посчитаем настоящие траты." },
-  { id: "s-accounts", title: "Счета",
+  { id: "s-accounts", slug: "scheta", icon: "accounts", group: 0, title: "Счета",
     sub: "Уточните назначение счетов – от этого зависят итоговые цифры." },
-  { id: "s-dash", title: "Траты",
+  { id: "s-dash", slug: "traty", icon: "dash", group: 0, title: "Траты",
     sub: "Куда уходили деньги за загруженный период." },
-  { id: "s-questions", title: "Вопросы",
-    sub: "Несколько вопросов, чтобы разбор был про вас, а не вообще." },
-  { id: "s-report", title: "Разбор",
+  { id: "s-questions", slug: "voprosy", icon: "questions", group: 1, title: "Вопросы",
+    sub: "Несколько вопросов, чтобы разбор был точнее." },
+  { id: "s-report", slug: "razbor", icon: "report", group: 1, title: "Разбор",
     sub: "Что получается, что мешает и что с этим делать." },
 ];
 
-// Категории: бирюзово-песочная гамма, тёплые тона отданы заметным статьям.
+// Группы разделов. Каждой соответствует одна кнопка боковой панели.
+const GROUPS = [
+  { first: 0, label: "Разбор выписки" },
+  { first: 3, label: "Итог" },
+];
+
+// Золотая гамма ведущая, остальные оттенки подобраны так, чтобы соседние
+// сегменты кольца различались.
 const CAT_COLORS = {
-  "Продукты": "#0f8a7e",
-  "Кафе и рестораны": "#e8b04b",
-  "Транспорт": "#3aa8a0",
+  "Продукты": "#d9a336",
+  "Кафе и рестораны": "#a86e18",
+  "Транспорт": "#edd08a",
   "Жильё и ЖКУ": "#2f7fa8",
   "Развлечения": "#c9873f",
   "Ставки": "#d9584a",
   "Спортзал": "#12a06a",
-  "Здоровье": "#4bb5c4",
+  "Здоровье": "#7a9e3f",
   "Одежда и красота": "#d98b7a",
-  "Связь и интернет": "#7f9c98",
-  "Подписки": "#a3894f",
+  "Связь и интернет": "#8c8a7f",
+  "Подписки": "#b8944a",
   "Образование": "#4a9d6b",
-  "Услуги": "#a7b3af",
-  "Переводы": "#c8d2ce",
-  "Наличные": "#b6c1bd",
+  "Услуги": "#a8a396",
+  "Переводы": "#d2cec4",
+  "Наличные": "#bdb8ab",
   // «Прочее» часто самая крупная статья, поэтому цвет заметный, а не почти белый.
-  "Прочее": "#6f8480",
+  "Прочее": "#8a8578",
 };
 
 const state = {
@@ -72,9 +89,39 @@ function deltaMark(delta) {
 
 /* ---------- навигация ---------- */
 
-function go(index) {
+// Последний открытый раздел каждой группы. Кнопка возвращает туда, где
+// пользователь остановился, а не в начало группы.
+const lastInGroup = [0, 3];
+
+function renderRail() {
+  const current = STEPS[state.step];
+
+  $("rail-nav").innerHTML = GROUPS.map((group, index) => {
+    const inGroup = current.group === index;
+    // На кнопке значок открытого раздела, если группа активна,
+    // иначе значок того раздела, где пользователь был в ней последний раз.
+    const step = STEPS[inGroup ? state.step : lastInGroup[index]];
+    const locked = group.first > state.reached;
+    return `
+      <button class="rail-btn${inGroup ? " active" : ""}" data-group="${index}"
+              title="${inGroup ? step.title : group.label}"
+              aria-label="${inGroup ? step.title : group.label}"
+              ${locked ? "disabled" : ""}>${ICONS[step.icon]}</button>`;
+  }).join("");
+
+  $("rail-nav").querySelectorAll("[data-group]").forEach((btn) => {
+    btn.onclick = () => {
+      const index = Number(btn.dataset.group);
+      if (GROUPS[index].first > state.reached) return;
+      go(lastInGroup[index]);
+    };
+  });
+}
+
+function go(index, push = true) {
   state.step = index;
   state.reached = Math.max(state.reached, index);
+  lastInGroup[STEPS[index].group] = index;
 
   document.querySelectorAll(".screen").forEach((el) => el.classList.remove("on"));
   $(STEPS[index].id).classList.add("on");
@@ -82,20 +129,20 @@ function go(index) {
   $("page-title").textContent = STEPS[index].title;
   $("page-sub").textContent = STEPS[index].sub;
 
-  document.querySelectorAll(".rail-btn[data-step]").forEach((btn) => {
-    const step = Number(btn.dataset.step);
-    btn.classList.toggle("active", step === index);
-    btn.disabled = step > state.reached;
-  });
+  renderRail();
+
+  // Каждый переход попадает в историю браузера, поэтому разделы внутри
+  // группы листаются его стрелками «назад» и «вперёд».
+  if (push) {
+    history.pushState({ step: index }, "", `#${STEPS[index].slug}`);
+  }
 
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
-document.querySelectorAll(".rail-btn[data-step]").forEach((btn) => {
-  btn.onclick = () => {
-    const step = Number(btn.dataset.step);
-    if (step <= state.reached) go(step);
-  };
+window.addEventListener("popstate", (event) => {
+  const step = event.state && typeof event.state.step === "number" ? event.state.step : 0;
+  if (step <= state.reached) go(step, false);
 });
 
 $("logout").onclick = async () => {
@@ -328,9 +375,9 @@ function spark(months) {
            role="img" aria-label="Траты по месяцам" id="spark">
         <defs>
           <linearGradient id="areaFill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#0f8a7e" stop-opacity="0.3"/>
-            <stop offset="55%" stop-color="#0f8a7e" stop-opacity="0.12"/>
-            <stop offset="100%" stop-color="#0f8a7e" stop-opacity="0.02"/>
+            <stop offset="0%" stop-color="#d9a336" stop-opacity="0.3"/>
+            <stop offset="55%" stop-color="#d9a336" stop-opacity="0.12"/>
+            <stop offset="100%" stop-color="#d9a336" stop-opacity="0.02"/>
           </linearGradient>
         </defs>
         ${guides}
@@ -495,7 +542,13 @@ function renderDash(d) {
       <h3>Видно не всё</h3>
       <p>Покупки, оплаченные с других карт, в эту выписку не попадают. Добавьте выписки
          по остальным счетам – переводы между ними схлопнутся сами.</p>
-      <button class="btn" onclick="go(0)">Добавить выписку</button>
+      <div class="promo-actions">
+        <button class="btn" onclick="go(0)">Добавить выписку</button>
+        <button class="btn quiet" id="single-card">У меня одна карта</button>
+      </div>
+      <p class="promo-answer" id="single-card-answer" hidden>Тогда картина полная,
+         добавлять нечего. Если позже появится вторая карта или накопительный счёт,
+         загрузите выписку по нему, и переводы между счетами перестанут выглядеть тратами.</p>
     </div>` : "";
 
   $("dash").innerHTML = `
@@ -510,11 +563,17 @@ function renderDash(d) {
       <aside>${extras.join("")}</aside>
     </div>
 
-    <div class="grid four" style="margin-bottom:14px">
+    <div class="grid three" style="margin-bottom:14px">
       <div class="card stat"><b class="num">${money(t.average_check)}</b><span>средний чек</span></div>
       <div class="card stat"><b class="num">${t.operations}</b><span>операций разобрано</span></div>
-      <div class="card stat sand"><b class="num">${t.optional_share}%</b><span>необязательные траты</span></div>
-      <div class="card stat"><b class="num">${t.weekend_share}%</b><span>трат в выходные</span></div>
+      <div class="card stat sand explain" id="optional-card" tabindex="0" role="button" aria-expanded="false">
+        <b class="num">${t.optional_share}%</b>
+        <span>необязательные траты</span>
+        <div class="explain-body"><span>Сюда попадают кафе и доставка, развлечения,
+          ставки, подписки, одежда и красота. Это статьи, которые сокращаются без
+          ущерба для нужного. Продукты, транспорт, жильё, здоровье и связь
+          в расчёт не входят.</span></div>
+      </div>
     </div>
 
     <div class="grid two">
@@ -539,22 +598,6 @@ function renderDash(d) {
               </div>`).join("")}
           </div>
         </div>
-      </div>
-    </div>
-
-    <div class="card" style="margin-top:14px">
-      <h3>Каждый месяц</h3>
-      <p class="sub">сколько потрачено и на что уходило больше всего</p>
-      <div class="rows months">
-        ${months.map((m, i) => `
-          <div class="row month-row">
-            <div class="t"><b>${m.label}</b><span>${m.count} ${plural(m.count, "операция", "операции", "операций")} · чаще всего ${m.top_category.toLowerCase()}</span></div>
-            <div class="mbar-cell">
-              <div class="mbar"><i data-width="${Math.max(2, (m.amount / monthMax) * 100).toFixed(1)}"
-                   style="transition-delay:${(i * 0.045).toFixed(2)}s"></i></div>
-            </div>
-            <div class="v num">${money(m.amount)}${deltaMark(m.delta)}</div>
-          </div>`).join("")}
       </div>
     </div>
 
@@ -585,7 +628,44 @@ function renderDash(d) {
         </div>
         ${promo ? `<div style="margin-top:14px">${promo}</div>` : ""}
       </div>
+    </div>
+
+    <div class="card" style="margin-top:14px">
+      <h3>Каждый месяц</h3>
+      <p class="sub">сколько потрачено и на что уходило больше всего</p>
+      <div class="rows months">
+        ${months.map((m, i) => `
+          <div class="row month-row">
+            <div class="t"><b>${m.label}</b><span>${m.count} ${plural(m.count, "операция", "операции", "операций")} · чаще всего ${m.top_category.toLowerCase()}</span></div>
+            <div class="mbar-cell">
+              <div class="mbar"><i data-width="${Math.max(2, (m.amount / monthMax) * 100).toFixed(1)}"
+                   style="transition-delay:${(i * 0.045).toFixed(2)}s"></i></div>
+            </div>
+            <div class="v num">${money(m.amount)}${deltaMark(m.delta)}</div>
+          </div>`).join("")}
+      </div>
     </div>`;
+
+  // Пояснение к необязательным тратам раскрывается по нажатию.
+  const optional = $("optional-card");
+  if (optional) {
+    const toggle = () => {
+      const open = optional.classList.toggle("open");
+      optional.setAttribute("aria-expanded", String(open));
+    };
+    optional.onclick = toggle;
+    optional.onkeydown = (e) => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); }
+    };
+  }
+
+  const singleCard = $("single-card");
+  if (singleCard) {
+    singleCard.onclick = () => {
+      $("single-card-answer").hidden = false;
+      singleCard.disabled = true;
+    };
+  }
 
   // Оживляем то, что нельзя описать одной разметкой: график, кольцо и полосы.
   bindChart(months);
@@ -655,7 +735,7 @@ function next() {
 
 async function submitAnswers() {
   go(4);
-  $("report").innerHTML = `<div class="card"><div class="loading"><span class="spinner"></span>Собираю разбор…</div></div>`;
+  $("report").innerHTML = `<div class="card"><div class="loading"><span class="spinner"></span>Подвожу итог…</div></div>`;
   const res = await fetch("/api/report", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -707,7 +787,7 @@ function renderReport(r) {
       </div>
     </div>
 
-    <div class="section-title">Что сделать${total > 0 ? ` – до ${money(total)} в год` : ""}</div>
+    <div class="section-title">${total > 0 ? `Что сделать, чтобы сэкономить до ${money(total)} в год` : "Что сделать"}</div>
     ${(r.advice || []).map((a, i) => `
       <div class="tip" style="animation-delay:${(0.1 + i * 0.06).toFixed(2)}s">
         <div>
@@ -754,4 +834,7 @@ $("start-over").onclick = async () => {
   location.reload();
 };
 
-go(0);
+// Первый раздел заменяет запись в истории, а не добавляет новую,
+// иначе первое нажатие «назад» никуда не ведёт.
+history.replaceState({ step: 0 }, "", "#" + STEPS[0].slug);
+go(0, false);

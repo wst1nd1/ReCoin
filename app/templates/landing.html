@@ -15,11 +15,6 @@
     <span>Re<b>Coin</b></span>
   </a>
 
-  <nav class="menu">
-    <a href="#how">Как это работает</a>
-    <a href="#privacy">Приватность</a>
-  </nav>
-
   <div class="nav-actions">
     <button class="pill ghost" data-open-auth="login">Войти</button>
     <button class="pill" data-open-auth="register">Регистрация</button>
@@ -32,12 +27,12 @@
       <svg viewBox="0 0 1200 620" preserveAspectRatio="none">
         <defs>
           <linearGradient id="sweep" x1="0" y1="0" x2="1" y2="0.35">
-            <stop offset="0"    stop-color="#f6e0bd"/>
-            <stop offset="0.24" stop-color="#eddec8"/>
-            <stop offset="0.48" stop-color="#cfe6da"/>
-            <stop offset="0.7"  stop-color="#a5dbd0"/>
-            <stop offset="0.87" stop-color="#84ccc6"/>
-            <stop offset="1"    stop-color="#6fbfbe"/>
+            <stop offset="0"    stop-color="#faeed6"/>
+            <stop offset="0.24" stop-color="#f4e0b6"/>
+            <stop offset="0.48" stop-color="#eed296"/>
+            <stop offset="0.7"  stop-color="#e7c274"/>
+            <stop offset="0.87" stop-color="#dfb254"/>
+            <stop offset="1"    stop-color="#d5a338"/>
           </linearGradient>
           <filter id="soften" x="-10%" y="-10%" width="120%" height="120%">
             <feGaussianBlur stdDeviation="0.9"/>
@@ -60,14 +55,12 @@
       <h1>Банк показывает обороты.<br>Мы показываем траты.</h1>
       <div class="hero-actions">
         <button class="pill big" data-open-auth="register">Разобрать свою выписку</button>
-        <span class="note">Файл разбирается на сервере в памяти и не сохраняется</span>
       </div>
     </div>
   </section>
 
   <section class="how reveal" id="how">
     <h2>Что делает ReCoin</h2>
-    <p class="how-hint">Нажмите на карточку, чтобы раскрыть</p>
     <div class="cards" id="cards">
       <article tabindex="0" role="button" aria-expanded="false">
         <h3>Читает выписку</h3>
@@ -93,20 +86,10 @@
     </div>
   </section>
 
-  <section class="privacy reveal" id="privacy">
-    <h2>Что происходит с данными</h2>
-    <ul>
-      <li>Выписка разбирается в памяти и на диск не сохраняется.</li>
-      <li>Модели уходят только названия магазинов и суммы по категориям – без ФИО,
-          номеров карт, счетов и телефонов.</li>
-      <li>Пароль хранится в виде хеша, исходный пароль не сохраняется нигде.</li>
-    </ul>
-  </section>
 </main>
 
 <footer>
   <span>ReCoin – разбор трат по банковской выписке</span>
-  <button class="link" data-open-auth="login">Войти в аккаунт</button>
 </footer>
 
 <!-- Вход и регистрация -->
@@ -121,20 +104,45 @@
         <span>Как к вам обращаться</span>
         <input type="text" name="name" autocomplete="name" placeholder="Имя">
       </label>
-      <label class="field">
+
+      <label class="field" id="email-field">
         <span>Почта</span>
-        <input type="email" name="email" autocomplete="email" required placeholder="you@example.com">
+        <input type="email" name="email" autocomplete="email" placeholder="you@example.com">
       </label>
-      <label class="field">
-        <span>Пароль</span>
-        <input type="password" name="password" autocomplete="current-password" required
-               minlength="8" placeholder="не короче 8 символов">
+
+      <label class="field" id="code-field" hidden>
+        <span>Код из письма</span>
+        <input type="text" name="code" inputmode="numeric" autocomplete="one-time-code"
+               maxlength="6" placeholder="шесть цифр">
+      </label>
+
+      <label class="field" id="password-field">
+        <span id="password-label">Пароль</span>
+        <input type="password" name="password" autocomplete="current-password" placeholder="Пароль">
+      </label>
+
+      <ul class="rules" id="password-rules" hidden>
+        <li data-rule="length">не менее 8 символов</li>
+        <li data-rule="digit">хотя бы одна цифра</li>
+        <li data-rule="upper">хотя бы одна заглавная буква</li>
+        <li data-rule="special">хотя бы один специальный знак</li>
+      </ul>
+
+      <label class="field" id="repeat-field" hidden>
+        <span>Повторите пароль</span>
+        <input type="password" name="password_repeat" autocomplete="new-password"
+               placeholder="Тот же пароль ещё раз">
       </label>
 
       <div class="form-error" id="auth-error" hidden></div>
+      <div class="form-note" id="auth-note" hidden></div>
 
       <button class="pill big full" type="submit" id="auth-submit">Войти</button>
     </form>
+
+    <p class="switch" id="forgot-line">
+      <button class="link" id="auth-forgot">Забыли пароль?</button>
+    </p>
 
     <p class="switch">
       <span id="switch-text">Ещё нет аккаунта?</span>

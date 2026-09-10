@@ -22,7 +22,16 @@ SESSION_TTL_SECONDS = 60 * 60 * 24 * 30  # месяц
 PBKDF2_ROUNDS = 200_000
 MIN_PASSWORD_LENGTH = 8
 
+# Восстановление пароля: код из шести цифр, живёт четверть часа,
+# после пяти неверных попыток перестаёт действовать.
+RESET_CODE_TTL_SECONDS = 15 * 60
+RESET_MAX_ATTEMPTS = 5
+
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+_DIGIT_RE = re.compile(r"\d")
+_UPPER_RE = re.compile(r"[A-ZА-ЯЁ]")
+# Специальным считается любой знак, кроме букв, цифр и пробела.
+_SPECIAL_RE = re.compile(r"[^A-Za-zА-Яа-яЁё0-9\s]")
 
 
 class AuthError(Exception):
@@ -67,6 +76,12 @@ def init_db() -> None:
                 expires_at REAL NOT NULL
             );
             CREATE INDEX IF NOT EXISTS sessions_user ON sessions(user_id);
+            CREATE TABLE IF NOT EXISTS reset_codes (
+                email      TEXT PRIMARY KEY,
+                code_hash  TEXT NOT NULL,
+                expires_at REAL NOT NULL,
+                attempts   INTEGER NOT NULL DEFAULT 0
+            );
             """
         )
 
@@ -99,12 +114,32 @@ def normalize_email(email: str) -> str:
     return (email or "").strip().lower()
 
 
+def password_problems(password: str) -> list[str]:
+    """Чего не хватает паролю. Пустой список означает, что пароль подходит."""
+    password = password or ""
+    missing = []
+    if len(password) < MIN_PASSWORD_LENGTH:
+        missing.append(f"не менее {MIN_PASSWORD_LENGTH} символов")
+    if not _DIGIT_RE.search(password):
+        missing.append("цифра")
+    if not _UPPER_RE.search(password):
+        missing.append("заглавная буква")
+    if not _SPECIAL_RE.search(password):
+        missing.append("специальный знак")
+    return missing
+
+
+def validate_password(password: str) -> None:
+    missing = password_problems(password)
+    if missing:
+        raise AuthError("Пароль не подходит. Требуется " + ", ".join(missing) + ".")
+
+
 def register(email: str, password: str, name: str = "") -> User:
     email = normalize_email(email)
     if not _EMAIL_RE.match(email):
         raise AuthError("Проверьте адрес почты – он выглядит неправильно.")
-    if len(password or "") < MIN_PASSWORD_LENGTH:
-        raise AuthError(f"Пароль должен быть не короче {MIN_PASSWORD_LENGTH} символов.")
+    validate_password(password)
 
     with _connect() as conn:
         exists = conn.execute("SELECT 1 FROM users WHERE email = ?", (email,)).fetchone()
@@ -161,3 +196,74 @@ def end_session(token: str | None) -> None:
         return
     with _connect() as conn:
         conn.execute("DELETE FROM sessions WHERE token = ?", (token,))
+
+
+# ---------- восстановление пароля ----------
+
+
+def create_reset_code(email: str) -> tuple[str, str] | None:
+    """Выдать код восстановления. None, если такой почты нет.
+
+    Возвращает пару из кода и имени пользователя. Код существует только
+    в этот момент, на диск попадает лишь его хеш.
+    """
+    email = normalize_email(email)
+    with _connect() as conn:
+        row = conn.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
+        if row is None:
+            return None
+
+        code = f"{secrets.randbelow(1_000_000):06d}"
+        conn.execute(
+            """
+            INSERT INTO reset_codes (email, code_hash, expires_at, attempts)
+            VALUES (?, ?, ?, 0)
+            ON CONFLICT(email) DO UPDATE SET
+                code_hash = excluded.code_hash,
+                expires_at = excluded.expires_at,
+                attempts = 0
+            """,
+            (email, _hash_password(code), time.time() + RESET_CODE_TTL_SECONDS),
+        )
+    return code, _row_to_user(row).name
+
+
+def reset_password(email: str, code: str, new_password: str) -> User:
+    """Сменить пароль по коду из письма."""
+    email = normalize_email(email)
+    validate_password(new_password)
+
+    with _connect() as conn:
+        row = conn.execute("SELECT * FROM reset_codes WHERE email = ?", (email,)).fetchone()
+        if row is None:
+            raise AuthError("Код не запрашивался. Начните восстановление заново.")
+        if row["expires_at"] < time.time():
+            conn.execute("DELETE FROM reset_codes WHERE email = ?", (email,))
+            raise AuthError("Срок действия кода истёк. Запросите новый.")
+        if row["attempts"] >= RESET_MAX_ATTEMPTS:
+            conn.execute("DELETE FROM reset_codes WHERE email = ?", (email,))
+            raise AuthError("Слишком много попыток. Запросите новый код.")
+
+        if not _password_matches((code or "").strip(), row["code_hash"]):
+            conn.execute(
+                "UPDATE reset_codes SET attempts = attempts + 1 WHERE email = ?", (email,)
+            )
+            left = RESET_MAX_ATTEMPTS - row["attempts"] - 1
+            if left > 0:
+                raise AuthError(f"Неверный код. Осталось попыток: {left}.")
+            raise AuthError("Неверный код. Попытки исчерпаны, запросите новый.")
+
+        user_row = conn.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
+        if user_row is None:
+            raise AuthError("Учётная запись не найдена.")
+
+        conn.execute(
+            "UPDATE users SET password_hash = ? WHERE id = ?",
+            (_hash_password(new_password), user_row["id"]),
+        )
+        conn.execute("DELETE FROM reset_codes WHERE email = ?", (email,))
+        # Прежние входы закрываются: если доступ к почте был у постороннего,
+        # старые сессии не должны пережить смену пароля.
+        conn.execute("DELETE FROM sessions WHERE user_id = ?", (user_row["id"],))
+
+    return _row_to_user(user_row)
