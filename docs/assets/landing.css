@@ -107,7 +107,7 @@ html, body {
   font-size: 28px;
   letter-spacing: -0.03em;
 }
-.mark img { width: 36px; height: auto; display: block; }
+.mark img { width: 46px; height: auto; display: block; }
 .mark b { font-weight: 620; }
 
 .pill {
@@ -375,10 +375,11 @@ h2 {
 .footer-word {
   position: absolute;
   left: 50%;
-  top: calc(var(--footer-top) - 120px);
+  /* Знак вписан в высоту подвала целиком. */
+  top: 14px;
+  bottom: 14px;
   transform: translateX(-50%);
   width: min(680px, 104%);
-  height: 680px;
   z-index: 1;
   pointer-events: none;
 }
@@ -432,11 +433,11 @@ h2 {
 
 @media (max-width: 900px) {
   .footer-grid { grid-template-columns: 1fr 1fr; }
-  .footer-word { width: min(540px, 110%); height: 540px; }
+  .footer-word { width: min(540px, 110%); }
 }
 @media (max-width: 560px) {
   .footer-grid { grid-template-columns: 1fr; gap: 30px; }
-  .footer-word { width: 400px; height: 400px; }
+  .footer-word { width: 400px; }
 }
 
 /* ---------- окно входа ---------- */
