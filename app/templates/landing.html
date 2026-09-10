@@ -137,35 +137,11 @@
     </div>
   </div>
 
-  <!-- Название на фоне: контур проявляется под курсором. -->
-  <div class="footer-word">
-    <svg id="footer-word" viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg"
-         role="img" aria-label="ReCoin">
-      <defs>
-        <linearGradient id="footerWordGradient" gradientUnits="userSpaceOnUse"
-                        x1="0" y1="0" x2="300" y2="100">
-          <stop offset="0%" stop-color="#e8b04b"/>
-          <stop offset="30%" stop-color="#d9a336"/>
-          <stop offset="60%" stop-color="#12a06a"/>
-          <stop offset="100%" stop-color="#2f7fa8"/>
-        </linearGradient>
-
-        <radialGradient id="footerWordMask" gradientUnits="userSpaceOnUse"
-                        r="52" cx="150" cy="50">
-          <stop offset="0%" stop-color="#ffffff"/>
-          <stop offset="100%" stop-color="#000000"/>
-        </radialGradient>
-
-        <mask id="footerWordReveal" maskUnits="userSpaceOnUse" x="0" y="0" width="300" height="100">
-          <rect x="0" y="0" width="300" height="100" fill="url(#footerWordMask)"/>
-        </mask>
-      </defs>
-
-      <text class="word-base" x="150" y="50" text-anchor="middle" dominant-baseline="middle">ReCoin</text>
-      <text class="word-draw" x="150" y="50" text-anchor="middle" dominant-baseline="middle">ReCoin</text>
-      <text class="word-glow" x="150" y="50" text-anchor="middle" dominant-baseline="middle"
-            mask="url(#footerWordReveal)">ReCoin</text>
-    </svg>
+  <!-- Знак на фоне: под курсором проявляется золотая подсветка. -->
+  <div class="footer-word" id="footer-word" aria-hidden="true"
+       style="--footer-word-img: url('/static/logo-mark.png')">
+    <span class="word-base"></span>
+    <span class="word-glow"></span>
   </div>
 
   <div class="footer-glow" aria-hidden="true"></div>
