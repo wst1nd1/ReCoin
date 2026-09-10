@@ -376,8 +376,8 @@ h2 {
   position: absolute;
   left: 50%;
   /* Знак вписан в высоту подвала целиком. */
-  top: 14px;
-  bottom: 14px;
+  top: 6px;
+  bottom: 6px;
   transform: translateX(-50%);
   width: min(680px, 104%);
   z-index: 1;
