@@ -31,31 +31,43 @@ if (cards) {
 }
 
 /* Место под самую большую раскрытую карточку резервируется заранее:
-   тогда при раскрытии страница не меняет длину. Замер идёт на копии ряда,
-   спрятанной за пределами экрана, чтобы на самой странице ничего не мелькало. */
+   тогда при раскрытии и закрытии страница не меняет длину, а подвал
+   остаётся на месте. Замер идёт на копии ряда, спрятанной за пределами
+   экрана, поэтому на самой странице ничего не мелькает. */
 const reserveCardSpace = () => {
   if (!cards) return;
+
+  const width = cards.getBoundingClientRect().width;
+  // До расчёта раскладки ширины ещё нет, замер в этот момент бессмысленен.
+  if (!width) return;
 
   const probe = cards.cloneNode(true);
   probe.removeAttribute("id");
   probe.style.position = "absolute";
   probe.style.left = "-10000px";
   probe.style.top = "0";
-  probe.style.width = `${cards.getBoundingClientRect().width}px`;
+  probe.style.width = `${width}px`;
   probe.style.minHeight = "0";
   probe.style.visibility = "hidden";
-  probe.querySelectorAll("article").forEach((article) => {
-    article.classList.add("open");
+
+  const copies = [...probe.querySelectorAll("article")];
+  copies.forEach((article) => {
     article.style.transition = "none";
     const full = article.querySelector(".full");
     if (full) full.style.transition = "none";
   });
 
   cards.parentNode.appendChild(probe);
+
+  // Ряд меряется столько раз, сколько карточек: раскрыта каждый раз одна.
+  // В строку это даёт высоту самой большой карточки, в столбик – сумму.
   let tallest = 0;
-  probe.querySelectorAll("article").forEach((article) => {
-    tallest = Math.max(tallest, article.offsetHeight);
+  copies.forEach((article) => {
+    copies.forEach((other) => other.classList.remove("open"));
+    article.classList.add("open");
+    tallest = Math.max(tallest, probe.offsetHeight);
   });
+
   probe.remove();
 
   if (tallest > 0) cards.style.minHeight = `${Math.ceil(tallest)}px`;
@@ -63,6 +75,7 @@ const reserveCardSpace = () => {
 
 if (cards) {
   reserveCardSpace();
+  window.addEventListener("load", reserveCardSpace);
   window.addEventListener("resize", reserveCardSpace);
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(reserveCardSpace);
 }
