@@ -10,6 +10,15 @@
 <link rel="stylesheet" href="assets/page.css">
 <link rel="icon" href="assets/logo-mark.png" type="image/png">
 <script src="assets/theme-init.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  // Базовый сброс Tailwind отключён: у сайта своё оформление,
+  // из библиотеки нужны только служебные классы компонента.
+  tailwind.config = {
+    darkMode: ["selector", '[data-theme="dark"]'],
+    corePlugins: { preflight: false },
+  };
+</script>
 </head>
 <body>
 
@@ -63,7 +72,7 @@
   </section>
 
   <section class="how reveal" id="how">
-    <canvas class="swarm" id="swarm" aria-hidden="true"></canvas>
+    <div class="swarm" id="swarm-root" aria-hidden="true"></div>
     <h2>Что делает ReCoin</h2>
     <div class="cards" id="cards">
       <article tabindex="0" role="button" aria-expanded="false">
@@ -148,7 +157,7 @@
 </footer>
 
 <script src="assets/theme.js"></script>
-<script src="assets/swarm.js"></script>
+<script type="module" src="assets/quantum-swarm.js"></script>
 <script src="assets/footer.js"></script>
 <script src="assets/page.js"></script>
 <script src="assets/app-url.js"></script>
