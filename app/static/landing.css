@@ -172,13 +172,13 @@ html, body {
 /* Шевроны выезжают справа при загрузке страницы, каждый со своей задержкой. */
 .hero-art path {
   transform-box: view-box;
-  animation: artIn 0.62s cubic-bezier(0.2, 0.8, 0.25, 1) both;
+  animation: artIn 1.35s cubic-bezier(0.2, 0.8, 0.25, 1) both;
 }
-.hero-art path:nth-child(2) { animation-delay: 0.05s; }
-.hero-art path:nth-child(3) { animation-delay: 0.1s; }
-.hero-art path:nth-child(4) { animation-delay: 0.15s; }
-.hero-art path:nth-child(5) { animation-delay: 0.2s; }
-.hero-art path:nth-child(6) { animation-delay: 0.25s; }
+.hero-art path:nth-child(2) { animation-delay: 0.11s; }
+.hero-art path:nth-child(3) { animation-delay: 0.22s; }
+.hero-art path:nth-child(4) { animation-delay: 0.33s; }
+.hero-art path:nth-child(5) { animation-delay: 0.44s; }
+.hero-art path:nth-child(6) { animation-delay: 0.55s; }
 
 /* Прозрачность у фигур своя, поэтому анимируется только сдвиг. */
 @keyframes artIn {
