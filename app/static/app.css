@@ -21,6 +21,7 @@
   --ocean: #2f7fa8;
   --coral-ink: #a8392c;     /* текст ошибки на светлой заливке */
   --gold-ink: #7a5a10;      /* текст подсказки на золотой заливке */
+  --accent-text: #8a6412;   /* золотой для текста и узора на светлом фоне */
   --sand-ink: #b8801f;
   --tip-bg: rgba(22, 36, 31, 0.92);
   --tip-ink: #ffffff;
@@ -62,7 +63,15 @@ html, body {
 
 /* ---------- каркас ---------- */
 
-.layout { display: flex; gap: 14px; padding: 14px; min-height: 100vh; }
+/* Узор из точек лежит за интерфейсом и занимает весь экран. */
+.swarm-fixed {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.layout { position: relative; z-index: 1; display: flex; gap: 14px; padding: 14px; min-height: 100vh; }
 
 .rail {
   flex: 0 0 66px;
@@ -1041,6 +1050,7 @@ textarea::placeholder { color: var(--placeholder); }
 
   --coral-ink: #f0a397;
   --gold-ink: #e7c377;
+  --accent-text: #e7c377;
   --sand-ink: #e0a944;
   --tip-bg: rgba(16, 27, 48, 0.96);
   --tip-ink: #eef3fb;

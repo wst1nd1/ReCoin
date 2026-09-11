@@ -8,8 +8,19 @@
 <link rel="stylesheet" href="/static/theme-toggle.css?v={{ v }}">
 <link rel="icon" href="/static/logo-mark.png" type="image/png">
 <script src="/static/theme-init.js?v={{ v }}"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  // Базовый сброс Tailwind отключён: у кабинета своё оформление,
+  // из библиотеки нужны только служебные классы компонента.
+  tailwind.config = {
+    darkMode: ["selector", '[data-theme="dark"]'],
+    corePlugins: { preflight: false },
+  };
+</script>
 </head>
 <body>
+
+<div class="swarm-fixed" id="swarm-root" aria-hidden="true"></div>
 
 <div class="layout">
 
@@ -256,6 +267,7 @@
 </div>
 
 <script src="/static/theme.js?v={{ v }}"></script>
+<script type="module" src="/static/quantum-swarm.js?v={{ v }}"></script>
 <script src="/static/app.js?v={{ v }}"></script>
 </body>
 </html>

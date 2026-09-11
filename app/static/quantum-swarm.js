@@ -112,7 +112,14 @@ export function QuantumSwarm({ particleCount, chrome = true, tagline = "SWARM", 
 
     // Первый расчёт сразу: сообщения наблюдателя приходят только вместе
     // с отрисовкой, а её может не быть до появления страницы на экране.
-    apply(container.getBoundingClientRect());
+    // Пока размеры нулевые, попытки повторяются.
+    let attempts = 8;
+    const ensure = () => {
+      apply(container.getBoundingClientRect());
+      if (attempts-- > 0) setTimeout(ensure, 150);
+    };
+    ensure();
+    window.addEventListener("load", ensure);
 
     const observer = new ResizeObserver((entries) => {
       for (const entry of entries) apply(entry.contentRect);
@@ -130,6 +137,8 @@ export function QuantumSwarm({ particleCount, chrome = true, tagline = "SWARM", 
       observer.disconnect();
       window.removeEventListener("resize", onResize);
       window.removeEventListener("swarm:layout", onResize);
+      window.removeEventListener("load", ensure);
+      attempts = 0;
     };
   }, [buildSwarm]);
 
@@ -349,12 +358,14 @@ export function QuantumSwarm({ particleCount, chrome = true, tagline = "SWARM", 
 const mount = document.getElementById("swarm-root");
 
 if (mount) {
-  /* Слой тянется от раздела о возможностях до конца страницы,
-     поэтому его границы пересчитываются при изменении разметки. */
+  /* На витрине слой тянется от раздела о возможностях до конца страницы,
+     поэтому его границы пересчитываются при изменении разметки. В кабинете
+     слой занимает весь экран, и считать ничего не нужно. */
   const start = document.getElementById("how");
+  const fixed = mount.classList.contains("swarm-fixed");
 
   const layout = () => {
-    if (!start) return;
+    if (!start || fixed) return;
     const top = start.getBoundingClientRect().top + window.scrollY;
     mount.style.top = `${top}px`;
     mount.style.height = `${Math.max(0, document.documentElement.scrollHeight - top)}px`;
