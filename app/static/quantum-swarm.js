@@ -62,6 +62,13 @@ export function QuantumSwarm({ particleCount, chrome = true, tagline = "SWARM", 
         distance,
         size: Math.random() * 1.4 + 0.5,
         excitation: 0,
+        // Собственные фазы и размах блуждания: без них движение выглядит
+        // слишком правильным.
+        phaseX: Math.random() * Math.PI * 2,
+        phaseY: Math.random() * Math.PI * 2,
+        speedX: 0.6 + Math.random() * 1.6,
+        speedY: 0.6 + Math.random() * 1.6,
+        wander: 8 + Math.random() * 26,
       });
     }
 
@@ -75,29 +82,46 @@ export function QuantumSwarm({ particleCount, chrome = true, tagline = "SWARM", 
     if (!container || !canvas) return;
 
     const ctx = canvas.getContext("2d");
+
+    const apply = (rect) => {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+      dimensionsRef.current = {
+        width: rect.width,
+        height: rect.height,
+        cx: rect.width / 2,
+        cy: rect.height / 2,
+      };
+
+      canvas.width = Math.round(rect.width * dpr);
+      canvas.height = Math.round(rect.height * dpr);
+      canvas.style.width = `${rect.width}px`;
+      canvas.style.height = `${rect.height}px`;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      buildSwarm();
+    };
+
+    // Первый расчёт сразу: сообщения наблюдателя приходят только вместе
+    // с отрисовкой, а её может не быть до появления страницы на экране.
+    apply(container.getBoundingClientRect());
+
     const observer = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        const rect = entry.contentRect;
-        const dpr = Math.min(window.devicePixelRatio || 1, 2);
-
-        dimensionsRef.current = {
-          width: rect.width,
-          height: rect.height,
-          cx: rect.width / 2,
-          cy: rect.height / 2,
-        };
-
-        canvas.width = Math.round(rect.width * dpr);
-        canvas.height = Math.round(rect.height * dpr);
-        canvas.style.width = `${rect.width}px`;
-        canvas.style.height = `${rect.height}px`;
-        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-        buildSwarm();
-      }
+      for (const entry of entries) apply(entry.contentRect);
     });
 
     observer.observe(container);
-    return () => observer.disconnect();
+
+    // Запасной пересчёт: сообщения наблюдателя приходят вместе с отрисовкой,
+    // а размеры слоя может поменять и внешний скрипт.
+    const onResize = () => apply(container.getBoundingClientRect());
+    window.addEventListener("resize", onResize);
+    window.addEventListener("swarm:layout", onResize);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", onResize);
+      window.removeEventListener("swarm:layout", onResize);
+    };
   }, [buildSwarm]);
 
   /* Смена темы меняет цвета узора. */
@@ -149,8 +173,8 @@ export function QuantumSwarm({ particleCount, chrome = true, tagline = "SWARM", 
       for (const p of particles) {
         // Спираль поворачивается целиком, ближние точки – чуть быстрее.
         const angle = p.angle + time * (1 + 100 / (p.distance + 100));
-        p.baseX = cx + Math.cos(angle) * p.distance;
-        p.baseY = cy + Math.sin(angle) * p.distance;
+        p.baseX = cx + Math.cos(angle) * p.distance + Math.sin(time * 9 * p.speedX + p.phaseX) * p.wander;
+        p.baseY = cy + Math.sin(angle) * p.distance + Math.cos(time * 9 * p.speedY + p.phaseY) * p.wander;
 
         p.vx += (p.baseX - p.x) * 0.02;
         p.vy += (p.baseY - p.y) * 0.02;
@@ -177,6 +201,12 @@ export function QuantumSwarm({ particleCount, chrome = true, tagline = "SWARM", 
             p.vy += (wy / distWave) * impulse;
             p.excitation = 1;
           }
+        }
+
+        // Редкие случайные толчки сбивают правильность орбит.
+        if (!reduced && Math.random() < 0.02) {
+          p.vx += (Math.random() - 0.5) * 0.7;
+          p.vy += (Math.random() - 0.5) * 0.7;
         }
 
         p.vx *= 0.88;
@@ -308,8 +338,32 @@ export function QuantumSwarm({ particleCount, chrome = true, tagline = "SWARM", 
 }
 
 const mount = document.getElementById("swarm-root");
+
 if (mount) {
+  /* Слой тянется от раздела о возможностях до конца страницы,
+     поэтому его границы пересчитываются при изменении разметки. */
+  const start = document.getElementById("how");
+
+  const layout = () => {
+    if (!start) return;
+    const top = start.getBoundingClientRect().top + window.scrollY;
+    mount.style.top = `${top}px`;
+    mount.style.height = `${Math.max(0, document.documentElement.scrollHeight - top)}px`;
+    window.dispatchEvent(new Event("swarm:layout"));
+  };
+
+  layout();
+  // Высота страницы меняется по мере загрузки стилей и картинок.
+  window.addEventListener("load", layout);
+  new ResizeObserver(layout).observe(document.body);
+  window.addEventListener("resize", layout);
+
   createRoot(mount).render(html`<${QuantumSwarm} chrome=${false} />`);
+
+  // Компонент появляется в разметке не мгновенно, поэтому размеры слоя
+  // сообщаются ему ещё раз после первой отрисовки.
+  setTimeout(layout, 0);
+  setTimeout(layout, 600);
 }
 
 export default QuantumSwarm;

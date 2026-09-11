@@ -222,24 +222,27 @@ html, body {
 
 section.how {
   position: relative;
-  isolation: isolate;
-  overflow: hidden;
   padding: clamp(48px, 7vw, 90px) clamp(20px, 5vw, 60px) clamp(90px, 12vw, 170px);
 }
 
-/* Фоновая сетка точек рисуется скриптом и лежит под содержимым секции. */
+/* Слой узора занимает полосу от раздела о возможностях до низа страницы,
+   поэтому точки видны и за подвалом. Границы полосы растворяются маской,
+   иначе переход между разделами выглядит обрезанным. */
 .swarm {
   position: absolute;
-  inset: 0;
+  left: 0;
+  right: 0;
   z-index: 0;
-  display: block;
-  width: 100%;
-  height: 100%;
   pointer-events: none;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 14%, #000 94%, transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 14%, #000 94%, transparent 100%);
 }
 
 section.how > h2,
 section.how > .cards { position: relative; z-index: 1; }
+
+/* Подвал лежит поверх узора, а его полупрозрачный фон пропускает точки. */
+.site-footer { z-index: 1; }
 
 h2 {
   margin: 0 0 clamp(22px, 3vw, 34px);
