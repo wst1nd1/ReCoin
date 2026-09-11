@@ -30,6 +30,43 @@ if (cards) {
   });
 }
 
+/* Место под самую большую раскрытую карточку резервируется заранее:
+   тогда при раскрытии страница не меняет длину. Замер идёт на копии ряда,
+   спрятанной за пределами экрана, чтобы на самой странице ничего не мелькало. */
+const reserveCardSpace = () => {
+  if (!cards) return;
+
+  const probe = cards.cloneNode(true);
+  probe.removeAttribute("id");
+  probe.style.position = "absolute";
+  probe.style.left = "-10000px";
+  probe.style.top = "0";
+  probe.style.width = `${cards.getBoundingClientRect().width}px`;
+  probe.style.minHeight = "0";
+  probe.style.visibility = "hidden";
+  probe.querySelectorAll("article").forEach((article) => {
+    article.classList.add("open");
+    article.style.transition = "none";
+    const full = article.querySelector(".full");
+    if (full) full.style.transition = "none";
+  });
+
+  cards.parentNode.appendChild(probe);
+  let tallest = 0;
+  probe.querySelectorAll("article").forEach((article) => {
+    tallest = Math.max(tallest, article.offsetHeight);
+  });
+  probe.remove();
+
+  if (tallest > 0) cards.style.minHeight = `${Math.ceil(tallest)}px`;
+};
+
+if (cards) {
+  reserveCardSpace();
+  window.addEventListener("resize", reserveCardSpace);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(reserveCardSpace);
+}
+
 /* Появление секций при прокрутке. */
 const revealables = document.querySelectorAll(".reveal");
 if (revealables.length) {
@@ -45,3 +82,4 @@ if (revealables.length) {
     { threshold: 0.12, rootMargin: "0px 0px -40px 0px" }
   );
   revealables.forEach((el) => observer.observe(el));
+}
