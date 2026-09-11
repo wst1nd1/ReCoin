@@ -53,8 +53,9 @@ const reserveCardSpace = () => {
   const copies = [...probe.querySelectorAll("article")];
   copies.forEach((article) => {
     article.style.transition = "none";
-    const full = article.querySelector(".full");
-    if (full) full.style.transition = "none";
+    article.querySelectorAll("p").forEach((line) => {
+      line.style.transition = "none";
+    });
   });
 
   cards.parentNode.appendChild(probe);
@@ -74,8 +75,16 @@ const reserveCardSpace = () => {
 };
 
 if (cards) {
-  reserveCardSpace();
-  window.addEventListener("load", reserveCardSpace);
+  // При первых вызовах раскладки может ещё не быть, поэтому попытки
+  // повторяются до появления ширины ряда.
+  let attempts = 20;
+  const ensureReserve = () => {
+    reserveCardSpace();
+    if (!cards.style.minHeight && attempts-- > 0) requestAnimationFrame(ensureReserve);
+  };
+
+  ensureReserve();
+  window.addEventListener("load", ensureReserve);
   window.addEventListener("resize", reserveCardSpace);
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(reserveCardSpace);
 }
