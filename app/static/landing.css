@@ -288,16 +288,16 @@ h2 {
 
 .cards p { margin: 0; color: var(--ink-soft); font-size: 15px; }
 
-/* Свёрнутый вид показывает короткую строку, раскрытый – полный текст. */
-.cards .full {
-  display: grid;
-  grid-template-rows: 0fr;
-  opacity: 0;
-  transition: grid-template-rows 0.4s cubic-bezier(0.3, 0.8, 0.35, 1), opacity 0.3s;
+/* Короткая строка и полный текст занимают одну ячейку, поэтому высота
+   карточки сразу рассчитана на полный текст и при раскрытии не меняется. */
+.card-body { display: grid; }
+.card-body > p {
+  grid-area: 1 / 1;
+  transition: opacity 0.3s;
 }
-.cards .full > span { overflow: hidden; }
-.cards article.open .full { grid-template-rows: 1fr; opacity: 1; }
-.cards article.open .short { display: none; }
+.cards .full { opacity: 0; }
+.cards article.open .short { opacity: 0; }
+.cards article.open .full { opacity: 1; }
 
 /* Значок раскрытия */
 .cards article::after {
