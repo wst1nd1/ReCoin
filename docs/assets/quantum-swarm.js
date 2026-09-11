@@ -85,12 +85,17 @@ export function QuantumSwarm({ particleCount, chrome = true, tagline = "SWARM", 
 
     const apply = (rect) => {
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const previous = dimensionsRef.current;
+
+      const widthChanged = Math.abs(rect.width - previous.width) > 2;
 
       dimensionsRef.current = {
         width: rect.width,
         height: rect.height,
-        cx: rect.width / 2,
-        cy: rect.height / 2,
+        // При смене одной высоты центр остаётся на месте, иначе узор
+        // сползал бы каждый раз, когда страница становится длиннее.
+        cx: widthChanged || !previous.width ? rect.width / 2 : previous.cx,
+        cy: widthChanged || !previous.height ? rect.height / 2 : previous.cy,
       };
 
       canvas.width = Math.round(rect.width * dpr);
@@ -98,7 +103,11 @@ export function QuantumSwarm({ particleCount, chrome = true, tagline = "SWARM", 
       canvas.style.width = `${rect.width}px`;
       canvas.style.height = `${rect.height}px`;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      buildSwarm();
+
+      // Заново точки расставляются только при смене ширины. Высота меняется
+      // каждый раз, когда на странице что-то раскрывается, и пересборка
+      // приводила бы к рывку.
+      if (widthChanged || particlesRef.current.length === 0) buildSwarm();
     };
 
     // Первый расчёт сразу: сообщения наблюдателя приходят только вместе
