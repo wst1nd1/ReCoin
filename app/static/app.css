@@ -443,6 +443,33 @@ select:hover { border-color: var(--accent); }
 
 .card.stat:hover { box-shadow: var(--shadow-hover); transform: translateY(-2px); }
 
+/* ---------- пустые разделы ---------- */
+
+/* Заглушка объясняет, что появится в разделе после загрузки выписки. */
+.card.empty {
+  display: grid;
+  justify-items: center;
+  text-align: center;
+  gap: 14px;
+  padding: clamp(30px, 5vw, 54px) clamp(20px, 4vw, 40px);
+}
+.card.empty h2 { margin: 0; font-size: 20px; font-weight: 560; letter-spacing: -0.02em; }
+.card.empty p { margin: 0; max-width: 46ch; color: var(--ink-soft); font-size: 14.5px; line-height: 1.6; }
+.card.empty .btn { margin-top: 4px; }
+
+.empty-art {
+  width: min(220px, 70%);
+  height: auto;
+  fill: none;
+  stroke: var(--line-strong);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.9;
+}
+.empty-art .dot { fill: var(--accent); stroke: none; }
+.empty-art .arc { stroke: var(--accent); stroke-width: 3; }
+
 /* ---------- кольцо категорий ---------- */
 
 .donut-wrap { display: flex; gap: 26px; align-items: center; }
@@ -1015,6 +1042,25 @@ textarea::placeholder { color: var(--placeholder); }
 .profile-row:last-child { border-bottom: 0; }
 .profile-row span { color: var(--dim); font-size: 13.5px; }
 .profile-row b { font-weight: 540; font-size: 14.5px; word-break: break-word; }
+
+/* Телефоны: графики уменьшаются, подписи и легенда сжимаются. */
+@media (max-width: 560px) {
+  .spark { height: 140px; }
+  .spark text { font-size: 10px; }
+  .donut-wrap { gap: 18px; }
+  .donut-holder svg { width: 156px; height: 156px; }
+  .donut-center .val { font-size: 17px; }
+  .donut-center .pct, .donut-center .cap { font-size: 11.5px; }
+  .legend-row {
+    grid-template-columns: 8px minmax(44px, 1fr) auto auto;
+    gap: 8px;
+    font-size: 12.5px;
+  }
+  .legend-row .pct { width: 34px; }
+  .chart-tip { font-size: 12.5px; padding: 6px 10px; }
+  .card.empty { gap: 12px; }
+  .empty-art { width: 80%; }
+}
 
 @media (max-width: 560px) {
   .profile-row { grid-template-columns: 1fr; gap: 3px; }

@@ -208,6 +208,22 @@ const DICT = {
   "разбор не удался": "parsing failed",
   "Прочее": "Other",
 
+  "Здесь появятся траты": "Spending will appear here",
+  "Загрузите выписку – покажем суммы по месяцам, доли категорий, регулярные списания и крупные покупки.":
+    "Upload a statement and we will show monthly totals, category shares, recurring charges and large purchases.",
+  "Здесь появится разбор": "The review will appear here",
+  "После загрузки выписки зададим несколько вопросов и соберём оценку, сильные стороны и советы с расчётом экономии.":
+    "After the statement is uploaded we will ask a few questions and put together a score, your strengths and advice with calculated savings.",
+  "Загрузить выписку": "Upload a statement",
+  "Как читаются цифры": "How the numbers work",
+  "Итог – это покупки за период. Переводы между своими счетами в него не входят.":
+    "The total is your purchases for the period. Transfers between your own accounts are excluded.",
+  "Что тратой не считается": "What is not spending",
+  "Пополнение вклада, возвращённый долг и платёж по кредитной карте. Эти деньги остаются вашими или гасят долг.":
+    "Savings top-ups, repaid loans and credit card payments. That money stays yours or clears debt.",
+  "Разобранные выписки на диск не пишутся. Они живут в памяти сервера и исчезают при перезапуске.":
+    "Parsed statements are never written to disk. They live in server memory and disappear on restart.",
+
   /* ---------- категории трат ---------- */
   "Продукты": "Groceries",
   "Кафе и рестораны": "Cafes and restaurants",

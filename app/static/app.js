@@ -151,7 +151,6 @@ function go(index, push = true) {
   $("page-sub").textContent = STEPS[index].sub;
 
   renderRail();
-  paintFooterLinks();
 
   // Каждый переход попадает в историю браузера, поэтому разделы внутри
   // группы листаются его стрелками «назад» и «вперёд».
@@ -169,24 +168,11 @@ window.addEventListener("popstate", (event) => {
 
 $("feedback-btn").onclick = () => go(FEEDBACK_STEP);
 
-// Ссылки подвала ведут в разделы кабинета. Недоступные пока разделы
-// показываются приглушённо и не срабатывают.
-document.querySelectorAll("[data-go]").forEach((link) => {
-  link.addEventListener("click", (event) => {
-    event.preventDefault();
-    const index = Number(link.dataset.go);
-    if (!SIDE_STEPS.has(index) && index > state.reached) return;
-    go(index);
-  });
+// Кнопки на заглушках пустых разделов ведут к загрузке выписки.
+document.querySelectorAll("#dash [data-goto-upload], #report [data-goto-upload]").forEach((btn) => {
+  btn.onclick = () => go(0);
 });
 
-function paintFooterLinks() {
-  document.querySelectorAll("[data-go]").forEach((link) => {
-    const index = Number(link.dataset.go);
-    const locked = !SIDE_STEPS.has(index) && index > state.reached;
-    link.classList.toggle("locked", locked);
-  });
-}
 
 /* ---------- меню профиля ---------- */
 
@@ -425,7 +411,11 @@ function spark(months) {
   ).join("");
 
   // Подписи только по краям и в середине, иначе на годовом периоде каша.
-  const marks = new Set([0, Math.floor((months.length - 1) / 2), months.length - 1]);
+  // На телефоне средняя подпись налезает на соседние, поэтому остаются края.
+  const narrow = window.innerWidth < 560;
+  const marks = narrow
+    ? new Set([0, months.length - 1])
+    : new Set([0, Math.floor((months.length - 1) / 2), months.length - 1]);
   const labels = months.map((m, i) =>
     marks.has(i)
       ? `<text x="${x(i).toFixed(1)}" y="${h - 8}" text-anchor="${i === 0 ? "start" : i === months.length - 1 ? "end" : "middle"}">${m.label.replace(/ \d{4}$/, "")}</text>`

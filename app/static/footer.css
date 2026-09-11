@@ -147,9 +147,3 @@
   .footer-grid { grid-template-columns: 1fr; gap: 30px; }
   .footer-word { width: 400px; }
 }
-
-/* Ссылка в подвале кабинета на раздел, до которого пользователь ещё не дошёл. */
-.site-footer a.locked {
-  opacity: 0.45;
-  cursor: default;
-}
