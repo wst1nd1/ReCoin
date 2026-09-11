@@ -103,6 +103,11 @@ def _asset_version() -> str:
     return str(int(newest))
 
 
+def _language(value: str | None) -> str:
+    """Язык интерфейса из куки. Всё, кроме английского, считается русским."""
+    return "en" if (value or "").strip().lower() == "en" else "ru"
+
+
 def _build_state(session: Session) -> dict[str, Any]:
     """Пересчитать всё от загруженных выписок до готовых цифр."""
     folio = portfolio.build(session.statements)
@@ -298,7 +303,8 @@ async def register(body: dict):
 
 
 @app.post("/api/auth/reset/request")
-async def reset_request(body: dict, background: BackgroundTasks):
+async def reset_request(body: dict, background: BackgroundTasks,
+                        recoin_lang: str | None = Cookie(default=None)):
     """Выслать код восстановления на почту."""
     email = body.get("email", "")
     issued = auth.create_reset_code(email)
@@ -307,7 +313,13 @@ async def reset_request(body: dict, background: BackgroundTasks):
         code, name = issued
         # Письмо уходит после ответа: недоступный почтовый сервер отвечает
         # не сразу, и пользователь ждал бы окончания попытки.
-        background.add_task(mailer.send_reset_code, auth.normalize_email(email), code, name)
+        background.add_task(
+            mailer.send_reset_code,
+            auth.normalize_email(email),
+            code,
+            name,
+            _language(recoin_lang),
+        )
 
     # Ответ одинаковый независимо от того, есть такая почта или нет,
     # иначе по нему можно перебирать зарегистрированные адреса.
@@ -453,7 +465,8 @@ async def set_accounts(body: dict, recoin_auth: str | None = Cookie(default=None
 
 
 @app.post("/api/questions")
-async def questions(recoin_auth: str | None = Cookie(default=None)):
+async def questions(recoin_auth: str | None = Cookie(default=None),
+                    recoin_lang: str | None = Cookie(default=None)):
     """Вопросы под конкретные цифры пользователя."""
     session = _get_session(_require_user(recoin_auth))
     if not session.statements:
@@ -462,7 +475,7 @@ async def questions(recoin_auth: str | None = Cookie(default=None)):
     state = _build_state(session)
     report: analytics.Analysis = state["analysis"]
 
-    items = agent.generate_questions(analytics.to_summary(report))
+    items = agent.generate_questions(analytics.to_summary(report), _language(recoin_lang))
     if items:
         session.ai_used = True
     else:
@@ -473,7 +486,8 @@ async def questions(recoin_auth: str | None = Cookie(default=None)):
 
 
 @app.post("/api/report")
-async def build_report(body: dict, recoin_auth: str | None = Cookie(default=None)):
+async def build_report(body: dict, recoin_auth: str | None = Cookie(default=None),
+                       recoin_lang: str | None = Cookie(default=None)):
     """Итоговый разбор с учётом ответов пользователя."""
     session = _get_session(_require_user(recoin_auth))
     if not session.statements:
@@ -492,7 +506,11 @@ async def build_report(body: dict, recoin_auth: str | None = Cookie(default=None
         if key in session.answers:
             labelled[question.get("text", key)] = session.answers[key]
 
-    result = agent.build_report(analytics.to_summary(report), labelled or session.answers)
+    result = agent.build_report(
+        analytics.to_summary(report),
+        labelled or session.answers,
+        _language(recoin_lang),
+    )
     if result:
         session.ai_used = True
         result["offline"] = False
@@ -572,6 +590,7 @@ async def feedback(
     text: str = Form(...),
     image: UploadFile | None = File(default=None),
     recoin_auth: str | None = Cookie(default=None),
+    recoin_lang: str | None = Cookie(default=None),
 ):
     """Отзыв пользователя. Уходит письмом, копия остаётся на диске."""
     user = _require_user(recoin_auth)

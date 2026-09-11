@@ -151,6 +151,7 @@ function go(index, push = true) {
   $("page-sub").textContent = STEPS[index].sub;
 
   renderRail();
+  paintFooterLinks();
 
   // Каждый переход попадает в историю браузера, поэтому разделы внутри
   // группы листаются его стрелками «назад» и «вперёд».
@@ -167,6 +168,25 @@ window.addEventListener("popstate", (event) => {
 });
 
 $("feedback-btn").onclick = () => go(FEEDBACK_STEP);
+
+// Ссылки подвала ведут в разделы кабинета. Недоступные пока разделы
+// показываются приглушённо и не срабатывают.
+document.querySelectorAll("[data-go]").forEach((link) => {
+  link.addEventListener("click", (event) => {
+    event.preventDefault();
+    const index = Number(link.dataset.go);
+    if (!SIDE_STEPS.has(index) && index > state.reached) return;
+    go(index);
+  });
+});
+
+function paintFooterLinks() {
+  document.querySelectorAll("[data-go]").forEach((link) => {
+    const index = Number(link.dataset.go);
+    const locked = !SIDE_STEPS.has(index) && index > state.reached;
+    link.classList.toggle("locked", locked);
+  });
+}
 
 /* ---------- меню профиля ---------- */
 

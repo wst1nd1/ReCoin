@@ -68,7 +68,20 @@ def smtp_configured() -> bool:
     return transport() != "none"
 
 
-def _compose(code: str, name: str) -> tuple[str, str]:
+def _compose(code: str, name: str, lang: str = "ru") -> tuple[str, str]:
+    """Тема и текст письма с кодом. Язык выбирает пользователь на сайте."""
+    if lang == "en":
+        greeting = f"Hello, {name}." if name else "Hello."
+        subject = "ReCoin password recovery"
+        body = (
+            f"{greeting}\n\n"
+            f"Your password reset code: {code}\n\n"
+            f"The code is valid for 15 minutes. If you did not request a password "
+            f"change, simply ignore this message.\n\n"
+            f"ReCoin"
+        )
+        return subject, body
+
     greeting = f"{name}, здравствуйте." if name else "Здравствуйте."
     subject = "Восстановление пароля в ReCoin"
     body = (
@@ -167,9 +180,9 @@ def _deliver(to: str, subject: str, body: str,
     return False
 
 
-def send_reset_code(to: str, code: str, name: str = "") -> bool:
+def send_reset_code(to: str, code: str, name: str = "", lang: str = "ru") -> bool:
     """Отправить код. False, если письмо не ушло."""
-    subject, body = _compose(code, name)
+    subject, body = _compose(code, name, lang)
     if _deliver(to, subject, body):
         return True
 
@@ -179,7 +192,12 @@ def send_reset_code(to: str, code: str, name: str = "") -> bool:
     return False
 
 
-def send_feedback(text: str, author: str, attachment: tuple[str, bytes] | None = None) -> bool:
+def send_feedback(text: str, author: str, attachment: tuple[str, bytes] | None = None,
+                  lang: str = "ru") -> bool:
     """Переслать отзыв пользователя."""
+    if lang == "en":
+        body = f"Feedback from ReCoin\n\nFrom: {author}\n\n{text}\n"
+        return _deliver(FEEDBACK_TO, "ReCoin feedback", body, attachment)
+
     body = f"Отзыв из ReCoin\n\nОт кого: {author}\n\n{text}\n"
     return _deliver(FEEDBACK_TO, "Отзыв о ReCoin", body, attachment)

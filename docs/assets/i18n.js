@@ -351,7 +351,7 @@ const translate = (root, toEnglish) => {
 
 const updateButtons = () => {
   document.querySelectorAll(".lang-toggle").forEach((btn) => {
-    btn.textContent = current === "en" ? "RU" : "EN";
+    btn.textContent = current === "en" ? "EN" : "RU";
     btn.setAttribute(
       "aria-label",
       current === "en" ? "Switch to Russian" : "Переключить на английский"
@@ -375,13 +375,19 @@ const applyLanguage = (lang) => {
   updateButtons();
 };
 
-const setLanguage = (lang) => {
-  applyLanguage(lang);
+const rememberLanguage = (lang) => {
   try {
     localStorage.setItem(LANG_KEY, lang);
   } catch {
     /* Приватный режим браузера запрещает запись – выбор живёт до перезагрузки. */
   }
+  // Куку читает сервер: на её основе выбирается язык разбора и писем.
+  document.cookie = `${LANG_KEY}=${lang}; path=/; max-age=31536000; samesite=lax`;
+};
+
+const setLanguage = (lang) => {
+  applyLanguage(lang);
+  rememberLanguage(lang);
 };
 
 /* Разделы кабинета собираются на ходу, поэтому новые узлы переводятся сразу. */
@@ -406,6 +412,7 @@ document.querySelectorAll(".lang-toggle").forEach((btn) => {
 });
 
 applyLanguage(current);
+rememberLanguage(current);
 observer.observe(document.body, {
   childList: true,
   subtree: true,

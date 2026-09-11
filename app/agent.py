@@ -215,8 +215,14 @@ _QUESTIONS_PROMPT = """Ты финансовый аналитик. По свод
 
 Верни результат вызовом save_questions."""
 
+# Язык ответа задаётся отдельной строкой: остальные требования от языка не зависят.
+_ENGLISH_NOTE = """
 
-def generate_questions(summary: dict) -> list[dict]:
+Answer in English: every question, wording and explanation must be written \
+in English, regardless of the language of the data."""
+
+
+def generate_questions(summary: dict, lang: str = "ru") -> list[dict]:
     """Вопросы под конкретные цифры пользователя. Пустой список – если ИИ недоступен."""
     client = build_client()
     if client is None:
@@ -231,7 +237,7 @@ def generate_questions(summary: dict) -> list[dict]:
             max_tokens=16000,
             thinking={"type": "adaptive"},
             output_config={"effort": "medium"},
-            system=_QUESTIONS_PROMPT,
+            system=_QUESTIONS_PROMPT + (_ENGLISH_NOTE if lang == "en" else ""),
             tools=[_QUESTIONS_TOOL],
             messages=[{
                 "role": "user",
@@ -309,7 +315,7 @@ _REPORT_PROMPT = """Ты финансовый консультант. По св�
 Верни результат вызовом save_report."""
 
 
-def build_report(summary: dict, answers: dict[str, str]) -> dict | None:
+def build_report(summary: dict, answers: dict[str, str], lang: str = "ru") -> dict | None:
     """Итоговый разбор. None, если модель недоступна."""
     client = build_client()
     if client is None:
@@ -331,7 +337,7 @@ def build_report(summary: dict, answers: dict[str, str]) -> dict | None:
             # На «максимуме» разбор занимал до пяти минут при том же качестве
             # выводов – столько ждать никто не станет.
             output_config={"effort": "medium"},
-            system=_REPORT_PROMPT,
+            system=_REPORT_PROMPT + (_ENGLISH_NOTE if lang == "en" else ""),
             tools=[_REPORT_TOOL],
             messages=[{
                 "role": "user",

@@ -1,0 +1,155 @@
+/* Подвал сайта. Общий файл для витрины и кабинета: разметка одна и та же,
+   меняются только внешние отступы. */
+
+/* ---------- подвал ---------- */
+
+.site-footer {
+  position: relative;
+  overflow: hidden;
+  margin: 40px clamp(12px, 3vw, 32px) 24px;
+  border-radius: 28px;
+  border: 1px solid var(--line);
+  background: var(--footer-bg);
+  color: var(--ink-soft);
+  font-size: 14px;
+}
+
+/* Мягкое свечение из верхней части подвала. */
+.footer-glow {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(125% 125% at 50% 8%, var(--footer-glow-0) 48%, var(--footer-glow-1) 100%);
+}
+
+.footer-inner {
+  position: relative;
+  z-index: 2;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: var(--footer-top) clamp(20px, 4vw, 56px) 22px;
+}
+
+.footer-grid {
+  display: grid;
+  grid-template-columns: 1.5fr repeat(3, 1fr);
+  gap: clamp(24px, 4vw, 56px);
+  padding-bottom: 34px;
+}
+
+.footer-brand .footer-mark {
+  display: block;
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+.footer-brand .footer-mark b { font-weight: 700; }
+.footer-brand p {
+  margin: 12px 0 0;
+  max-width: 34ch;
+  line-height: 1.6;
+  color: var(--ink-soft);
+}
+
+.site-footer h4 {
+  margin: 0 0 16px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.site-footer ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 11px; }
+.site-footer a { color: inherit; text-decoration: none; transition: color 0.16s; }
+.site-footer a:hover { color: var(--accent-text); }
+.site-footer .footer-note { margin: 0; line-height: 1.6; max-width: 30ch; }
+
+.footer-line { border: 0; border-top: 1px solid var(--line); margin: 0 0 20px; }
+
+.footer-bottom {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 24px;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--dim);
+  font-size: 13.5px;
+}
+.footer-bottom .footer-copy { font-variant-numeric: tabular-nums; }
+
+/* Знак на фоне: он крупнее подвала, поэтому виден только частью.
+   Нижний слой приглушённый, верхний золотой и проявляется в круге,
+   который следует за курсором. */
+.footer-word {
+  position: absolute;
+  left: 50%;
+  /* Знак вписан в высоту подвала целиком. */
+  top: 6px;
+  bottom: 6px;
+  transform: translateX(-50%);
+  width: min(680px, 104%);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.footer-word span {
+  position: absolute;
+  inset: 0;
+  display: block;
+  -webkit-mask-image: var(--footer-word-img);
+  mask-image: var(--footer-word-img);
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
+.footer-word .word-base {
+  background: var(--footer-word);
+  opacity: 0.5;
+}
+
+.footer-word .word-glow {
+  background: linear-gradient(120deg, var(--accent-deep) 0%, var(--accent) 40%,
+                              var(--gold-light) 70%, var(--accent-text) 100%);
+  opacity: 0;
+  transition: opacity 0.3s;
+
+  /* Вторая маска – круг под курсором. Пересечение с рисунком знака
+     оставляет золотым только участок рядом с указателем. */
+  -webkit-mask-image: var(--footer-word-img),
+    radial-gradient(circle 150px at var(--mx, 50%) var(--my, 50%), #000 25%, transparent 100%);
+  mask-image: var(--footer-word-img),
+    radial-gradient(circle 150px at var(--mx, 50%) var(--my, 50%), #000 25%, transparent 100%);
+  -webkit-mask-repeat: no-repeat, no-repeat;
+  mask-repeat: no-repeat, no-repeat;
+  -webkit-mask-position: center, center;
+  mask-position: center, center;
+  -webkit-mask-size: contain, 100% 100%;
+  mask-size: contain, 100% 100%;
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
+}
+
+.site-footer:hover .word-glow { opacity: 1; }
+
+@media (prefers-reduced-motion: reduce) {
+  .footer-word .word-glow { transition: none; }
+}
+
+@media (max-width: 900px) {
+  .footer-grid { grid-template-columns: 1fr 1fr; }
+  .footer-word { width: min(540px, 110%); }
+}
+@media (max-width: 560px) {
+  .footer-grid { grid-template-columns: 1fr; gap: 30px; }
+  .footer-word { width: 400px; }
+}
+
+/* Ссылка в подвале кабинета на раздел, до которого пользователь ещё не дошёл. */
+.site-footer a.locked {
+  opacity: 0.45;
+  cursor: default;
+}

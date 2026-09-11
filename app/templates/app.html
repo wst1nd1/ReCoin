@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ReCoin – кабинет</title>
 <link rel="stylesheet" href="/static/app.css?v={{ v }}">
+<link rel="stylesheet" href="/static/footer.css?v={{ v }}">
 <link rel="stylesheet" href="/static/theme-toggle.css?v={{ v }}">
 <link rel="icon" href="/static/logo-mark.png" type="image/png">
 <script src="/static/theme-init.js?v={{ v }}"></script>
@@ -103,6 +104,56 @@
           <button class="btn" id="go-accounts">Продолжить</button>
           <button class="btn ghost" id="add-more">Добавить ещё выписку</button>
         </div>
+      <footer class="site-footer">
+  <!-- Знак на фоне: крупнее подвала, поэтому виден только частью. -->
+  <div class="footer-word" id="footer-word" aria-hidden="true"
+       style="--footer-word-img: url('/static/logo-large.png')">
+    <span class="word-base"></span>
+    <span class="word-glow"></span>
+  </div>
+
+  <div class="footer-inner">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <span class="footer-mark">Re<b>Coin</b></span>
+        <p>Разбирает банковскую выписку и показывает, сколько денег вы потратили
+           на самом деле.</p>
+      </div>
+
+      <div>
+        <h4>Сервис</h4>
+        <ul>
+          <li><a href="#vypiski" data-go="0">Выписки</a></li>
+          <li><a href="#traty" data-go="2">Траты</a></li>
+          <li><a href="#razbor" data-go="4">Разбор</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <h4>Разработка</h4>
+        <ul>
+          <li><a href="https://github.com/wst1nd1/ReCoin" rel="noopener">Исходный код</a></li>
+          <li><a href="#otzyv" data-go="6">Оставить отзыв</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <h4>Данные</h4>
+        <p class="footer-note">Разобранные выписки на диск не пишутся: они живут
+           в памяти сервера и исчезают при перезапуске.</p>
+      </div>
+    </div>
+
+    <hr class="footer-line">
+
+    <div class="footer-bottom">
+      <span class="footer-copy">&copy; <span id="footer-year">2026</span> ReCoin</span>
+      <span>Все права защищены.</span>
+    </div>
+  </div>
+
+  <div class="footer-glow" aria-hidden="true"></div>
+</footer>
       </section>
 
       <!-- 2. Счета -->
@@ -268,6 +319,7 @@
 </div>
 
 <script src="/static/theme.js?v={{ v }}"></script>
+<script src="/static/footer.js?v={{ v }}"></script>
 <script src="/static/i18n.js?v={{ v }}"></script>
 <script type="module" src="/static/quantum-swarm.js?v={{ v }}"></script>
 <script src="/static/app.js?v={{ v }}"></script>
