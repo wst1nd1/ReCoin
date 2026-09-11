@@ -488,12 +488,12 @@ h2 {
   --ink: #e7edf7;
   --ink-soft: #b3c0d4;
   --dim: #7f8da6;
-  --line: #1d2b45;
-  --line-strong: #2b3d5e;
+  --line: #172338;
+  --line-strong: #22314c;
   --paper: #04060b;
-  --paper-2: #0e1729;
-  --card: #101b30;
-  --dark: #0a1220;
+  --paper-2: #0a1120;
+  --card: #0b1424;
+  --dark: #070d18;
   --accent: #e0ae45;
   --accent-ink: #2a1e05;
   --accent-text: #e7c377;
@@ -501,7 +501,7 @@ h2 {
   --accent-soft: #372c12;
   --green: #2fc08a;
 
-  --nav-bg: rgba(10, 16, 30, 0.55);
+  --nav-bg: rgba(6, 11, 22, 0.6);
   --nav-edge: rgba(231, 237, 247, 0.09);
   --nav-sheen: rgba(231, 237, 247, 0.06);
   --fade-0: rgba(4, 6, 11, 0);
@@ -511,10 +511,10 @@ h2 {
   --coral-soft: #331a1c;
   --coral-ink: #f0a397;
   --gold-ink: #e7c377;
-  --footer-bg: rgba(14, 23, 41, 0.5);
+  --footer-bg: rgba(10, 18, 33, 0.55);
   --footer-glow-0: rgba(10, 16, 30, 0);
   --footer-glow-1: rgba(217, 163, 54, 0.14);
-  --footer-word: #1b2942;
+  --footer-word: #16213a;
   --gold-light: #f0d79a;
   --tt-track: rgba(231, 237, 247, 0.15);
   --tt-thumb-bg: var(--card);
