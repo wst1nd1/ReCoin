@@ -118,6 +118,19 @@ const DICT = {
   "Что получается, что мешает и что с этим делать.":
     "What works, what gets in the way and what to do about it.",
   "Профиль": "Profile",
+  "История разборов": "Past reviews",
+  "Нажмите на карточку – откроются траты и разбор за тот период.":
+    "Click a card to open the spending and the review for that period.",
+  "Пока пусто. Карточка появится, когда вы посмотрите траты по загруженной выписке.":
+    "Nothing here yet. A card appears once you open the spending for an uploaded statement.",
+  "Очистить историю": "Clear history",
+  "История хранится в этом браузере и на сервер не отправляется.":
+    "History is kept in this browser and is never sent to the server.",
+  "Разбор не собран": "The review was not completed",
+  "По этой выписке вопросы остались без ответов, поэтому итог не сохранился. Загрузите выписку заново и пройдите разбор до конца.":
+    "The questions for this statement were left unanswered, so no result was saved. Upload the statement again and finish the review.",
+  "не собран": "not completed",
+  "Период не определён": "Period unknown",
   "Сведения об учётной записи.": "Account details.",
   "Оставить отзыв": "Send feedback",
   "Расскажите, что стоит улучшить, мы читаем всё.":

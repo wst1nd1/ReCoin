@@ -397,11 +397,16 @@ function chartGeometry(months) {
 }
 
 // Линия трат по месяцам: заливка, средний уровень, точка и подсказка под курсором.
+// Разметка размечена классами, а не идентификаторами: тот же график
+// рисуется и в окне истории, где на странице оказывается две копии.
+let gradientNumber = 0;
+
 function spark(months) {
   if (!months.length) return "";
   const { w, h, padL, padR, padB } = CHART;
   const { x, y, points } = chartGeometry(months);
   const avg = months.reduce((s, m) => s + m.amount, 0) / months.length;
+  const fillId = `areaFill-${++gradientNumber}`;
 
   const line = smoothPath(points);
   const area = `${line} L ${x(months.length - 1).toFixed(1)} ${h - padB} L ${padL} ${h - padB} Z`;
@@ -423,40 +428,40 @@ function spark(months) {
   ).join("");
 
   return `
-    <div class="chart-holder" id="chart-holder">
+    <div class="chart-holder">
       <svg class="spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"
-           role="img" aria-label="Траты по месяцам" id="spark">
+           role="img" aria-label="Траты по месяцам">
         <defs>
-          <linearGradient id="areaFill" x1="0" y1="0" x2="0" y2="1">
+          <linearGradient id="${fillId}" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stop-color="#d9a336" stop-opacity="0.3"/>
             <stop offset="55%" stop-color="#d9a336" stop-opacity="0.12"/>
             <stop offset="100%" stop-color="#d9a336" stop-opacity="0.02"/>
           </linearGradient>
         </defs>
         ${guides}
-        <path class="band draw" d="${area}"/>
+        <path class="band draw" style="fill:url(#${fillId})" d="${area}"/>
         <line class="avg" x1="${padL}" y1="${y(avg).toFixed(1)}" x2="${w - padR}" y2="${y(avg).toFixed(1)}"/>
-        <path class="line draw" id="spark-line" d="${line}"/>
-        <g id="spark-cursor"></g>
+        <path class="line draw" d="${line}"/>
+        <g class="spark-cursor"></g>
         ${labels}
       </svg>
-      <div class="chart-tip" id="chart-tip" hidden></div>
+      <div class="chart-tip" hidden></div>
     </div>`;
 }
 
 // Наведение на график: ближайшая точка подсвечивается, подсказка идёт следом.
-function bindChart(months) {
-  const svg = $("spark");
-  const holder = $("chart-holder");
-  const tip = $("chart-tip");
-  const cursor = $("spark-cursor");
+function bindChart(months, root = document) {
+  const svg = root.querySelector(".spark");
+  const holder = root.querySelector(".chart-holder");
+  const tip = root.querySelector(".chart-tip");
+  const cursor = root.querySelector(".spark-cursor");
   if (!svg || !months.length) return;
 
   const { x, y } = chartGeometry(months);
   const { w, h } = CHART;
 
   // Линия рисуется от начала к концу при появлении блока.
-  const path = $("spark-line");
+  const path = svg.querySelector(".line");
   if (path) path.style.setProperty("--len", Math.ceil(path.getTotalLength()));
 
   const show = (index) => {
@@ -514,26 +519,27 @@ function donut(categories) {
   }).join("");
 
   return `
-    <div class="donut-holder" id="donut-holder">
-      <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"
-           role="img" aria-label="Доли категорий трат" id="donut">
+    <div class="donut-holder">
+      <svg class="donut" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"
+           role="img" aria-label="Доли категорий трат">
         <circle class="donut-track" cx="${size / 2}" cy="${size / 2}" r="${r}" fill="none"
                 stroke-width="${stroke}"/>
         ${arcs}
       </svg>
-      <div class="donut-center" id="donut-center">
+      <div class="donut-center">
         <div class="val num">${money(total)}</div>
         <div class="pct">за период</div>
       </div>
     </div>`;
 }
 
-function bindDonut(categories) {
-  const svg = $("donut");
-  const center = $("donut-center");
+function bindDonut(categories, root = document) {
+  const svg = root.querySelector(".donut");
+  const center = root.querySelector(".donut-center");
   if (!svg) return;
 
   const segments = [...svg.querySelectorAll(".donut-seg")];
+  const rows = [...root.querySelectorAll(".legend-row")];
   const total = categories.reduce((s, x) => s + x.amount, 0) || 1;
 
   // Запуск отрисовки после вставки в документ.
@@ -543,7 +549,7 @@ function bindDonut(categories) {
 
   const reset = () => {
     segments.forEach((s) => { s.classList.remove("dim"); s.style.filter = "none"; });
-    document.querySelectorAll(".legend-row").forEach((r) => r.classList.remove("hot"));
+    rows.forEach((r) => r.classList.remove("hot"));
     center.innerHTML = `<div class="val num">${money(total)}</div><div class="pct">за период</div>`;
   };
 
@@ -554,7 +560,7 @@ function bindDonut(categories) {
       s.classList.toggle("dim", i !== index);
       s.style.filter = i === index ? `drop-shadow(0 0 6px ${catColor(cat.name)})` : "none";
     });
-    document.querySelectorAll(".legend-row").forEach((r, i) => r.classList.toggle("hot", i === index));
+    rows.forEach((r, i) => r.classList.toggle("hot", i === index));
     center.innerHTML = `
       <div class="cap">${cat.name}</div>
       <div class="val num">${money(cat.amount)}</div>
@@ -566,7 +572,7 @@ function bindDonut(categories) {
   });
   svg.addEventListener("mouseleave", reset);
 
-  document.querySelectorAll(".legend-row").forEach((row, i) => {
+  rows.forEach((row, i) => {
     row.addEventListener("mouseenter", () => highlight(i));
     row.addEventListener("mouseleave", reset);
   });
@@ -574,7 +580,10 @@ function bindDonut(categories) {
 
 /* ---------- дашборд ---------- */
 
-function renderDash(d) {
+function renderDash(d, root = $("dash")) {
+  // Тот же разбор рисуется и в окне истории, поэтому все обращения
+  // идут внутри переданного блока, а не по странице целиком.
+  const live = root === $("dash");
   const t = d.totals;
   const saved = t.gross_expense - t.net_expense;
   const months = d.months_detail || [];
@@ -590,21 +599,21 @@ function renderDash(d) {
   if (t.lent_not_returned > 0) extras.push(`<div><span>Одолжено и не вернулось</span><b class="num">${money(t.lent_not_returned)}</b></div>`);
 
   // Пока загружена одна выписка, часть картины скрыта – предлагаем догрузить.
-  const promo = d.statements.length === 1 ? `
+  const promo = live && d.statements.length === 1 ? `
     <div class="promo">
       <h3>Видно не всё</h3>
       <p>Покупки, оплаченные с других карт, в эту выписку не попадают. Добавьте выписки
          по остальным счетам – переводы между ними схлопнутся сами.</p>
       <div class="promo-actions">
         <button class="btn" onclick="go(0)">Добавить выписку</button>
-        <button class="btn quiet" id="single-card">У меня одна карта</button>
+        <button class="btn quiet" data-single>У меня одна карта</button>
       </div>
-      <p class="promo-answer" id="single-card-answer" hidden>Тогда картина полная,
+      <p class="promo-answer" data-single-answer hidden>Тогда картина полная,
          добавлять нечего. Если позже появится вторая карта или накопительный счёт,
          загрузите выписку по нему, и переводы между счетами перестанут выглядеть тратами.</p>
     </div>` : "";
 
-  $("dash").innerHTML = `
+  root.innerHTML = `
     <div class="verdict">
       <div>
         <p class="lead">Банк насчитал расходов</p>
@@ -619,7 +628,7 @@ function renderDash(d) {
     <div class="grid three" style="margin-bottom:14px">
       <div class="card stat"><b class="num">${money(t.average_check)}</b><span>средний чек</span></div>
       <div class="card stat"><b class="num">${t.operations}</b><span>операций разобрано</span></div>
-      <div class="card stat sand explain" id="optional-card" tabindex="0" role="button" aria-expanded="false">
+      <div class="card stat sand explain" data-optional tabindex="0" role="button" aria-expanded="false">
         <b class="num">${t.optional_share}%</b>
         <span>необязательные траты</span>
         <div class="explain-body"><span>Сюда попадают кафе и доставка, развлечения,
@@ -700,7 +709,7 @@ function renderDash(d) {
     </div>`;
 
   // Пояснение к необязательным тратам раскрывается по нажатию.
-  const optional = $("optional-card");
+  const optional = root.querySelector("[data-optional]");
   if (optional) {
     const toggle = () => {
       const open = optional.classList.toggle("open");
@@ -712,19 +721,19 @@ function renderDash(d) {
     };
   }
 
-  const singleCard = $("single-card");
+  const singleCard = root.querySelector("[data-single]");
   if (singleCard) {
     singleCard.onclick = () => {
-      $("single-card-answer").hidden = false;
+      root.querySelector("[data-single-answer]").hidden = false;
       singleCard.disabled = true;
     };
   }
 
   // Оживляем то, что нельзя описать одной разметкой: график, кольцо и полосы.
-  bindChart(months);
-  bindDonut(d.categories.slice(0, 8));
+  bindChart(months, root);
+  bindDonut(d.categories.slice(0, 8), root);
   requestAnimationFrame(() => {
-    document.querySelectorAll(".mbar i[data-width]").forEach((bar) => {
+    root.querySelectorAll(".mbar i[data-width]").forEach((bar) => {
       bar.style.width = `${bar.dataset.width}%`;
     });
   });
@@ -795,7 +804,9 @@ async function submitAnswers() {
     body: JSON.stringify({ answers: state.answers }),
   });
   if (res.status === 401) { location.href = "/"; return; }
-  renderReport(await res.json());
+  const built = await res.json();
+  renderReport(built);
+  rememberReport(built);
 }
 
 /* ---------- отчёт ---------- */
@@ -807,7 +818,7 @@ function ring(score) {
   return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" role="img"
       aria-label="Оценка ${score} из 100">
     <circle class="ring-track" cx="${size / 2}" cy="${size / 2}" r="${r}" fill="none" stroke-width="${stroke}"/>
-    <circle class="ring-fill" id="ring-fill" cx="${size / 2}" cy="${size / 2}" r="${r}" fill="none"
+    <circle class="ring-fill" cx="${size / 2}" cy="${size / 2}" r="${r}" fill="none"
       stroke="${color}" stroke-width="${stroke}" stroke-linecap="round"
       stroke-dasharray="0 ${c}" data-fill="${filled.toFixed(2)} ${(c - filled).toFixed(2)}"
       transform="rotate(-90 ${size / 2} ${size / 2})"/>
@@ -816,9 +827,9 @@ function ring(score) {
   </svg>`;
 }
 
-function renderReport(r) {
+function renderReport(r, root = $("report")) {
   const total = (r.advice || []).reduce((s, a) => s + (a.saving_per_year || 0), 0);
-  $("report").innerHTML = `
+  root.innerHTML = `
     <div class="score-head">
       ${ring(r.score)}
       <div class="txt">
@@ -855,7 +866,7 @@ function renderReport(r) {
 
   // Кольцо оценки заполняется после вставки в документ.
   requestAnimationFrame(() => {
-    const fill = $("ring-fill");
+    const fill = root.querySelector(".ring-fill");
     if (fill) fill.setAttribute("stroke-dasharray", fill.dataset.fill);
   });
 }
@@ -873,6 +884,7 @@ $("go-dash").onclick = async () => {
   try {
     const data = await saveAccounts();
     renderDash(data);
+    rememberDash(data);
     go(2);
   } finally {
     $("go-dash").disabled = false;
@@ -913,6 +925,7 @@ async function loadProfile() {
   const res = await fetch("/api/profile");
   if (res.status === 401) { location.href = "/"; return; }
   paintProfile(await res.json());
+  renderHistory();
 }
 
 $("open-profile").onclick = () => {
@@ -952,6 +965,276 @@ $("avatar-remove").onclick = async () => {
 
 // Картинка нужна сразу: она стоит в верхней панели на каждом экране.
 loadProfile();
+
+/* ---------- история разборов ---------- */
+
+// Разборы хранятся только в браузере: на сервере финансовые данные
+// на диск не пишутся, поэтому история живёт в хранилище страницы.
+const HISTORY_LIMIT = 12;
+
+// Лицевая сторона карточки: основной цвет, светлый край и полоса.
+const HISTORY_SKINS = [
+  ["#4a5a38", "#8f9a6a", "#2b3522"],
+  ["#8a6a3c", "#c9a36a", "#4a381f"],
+  ["#2f5f63", "#79a7a4", "#1c393c"],
+  ["#9a5c46", "#d19a7e", "#53301f"],
+  ["#36567f", "#7f9fc4", "#1f3049"],
+  ["#6f6a4a", "#b3ab84", "#3a3826"],
+];
+
+function historyKey() {
+  const email = ($("profile-email").textContent || "").trim().toLowerCase();
+  return `recoin-history:${email}`;
+}
+
+function readHistory() {
+  try {
+    const raw = localStorage.getItem(historyKey());
+    const list = raw ? JSON.parse(raw) : [];
+    return Array.isArray(list) ? list : [];
+  } catch (err) {
+    return [];
+  }
+}
+
+function writeHistory(list) {
+  let rows = list.slice(0, HISTORY_LIMIT);
+  // Хранилище браузера не резиновое: если места не хватает, самые старые
+  // записи уходят, пока новая не поместится.
+  while (rows.length) {
+    try {
+      localStorage.setItem(historyKey(), JSON.stringify(rows));
+      return;
+    } catch (err) {
+      rows = rows.slice(0, rows.length - 1);
+    }
+  }
+  try { localStorage.removeItem(historyKey()); } catch (err) { /* хранилище закрыто настройками */ }
+}
+
+// Ключ выписки: тот же набор файлов за тот же период обновляет запись,
+// а не добавляет рядом ещё одну.
+function historySignature(d) {
+  return (d.statements || []).map((s) => `${s.contract || s.source}|${s.period}`).join(";");
+}
+
+function periodLabel(d) {
+  const months = d.months_detail || [];
+  if (!months.length) return "Период не определён";
+  return months.length === 1
+    ? months[0].label
+    : `${months[0].label} – ${months[months.length - 1].label}`;
+}
+
+function rememberDash(d) {
+  if (!d) return;
+  const signature = historySignature(d);
+  const list = readHistory();
+  const found = list.find((e) => e.signature === signature);
+  const entry = found || { id: `h${Date.now()}`, signature, report: null };
+
+  entry.period = periodLabel(d);
+  entry.when = new Date().toLocaleDateString("ru-RU");
+  entry.created = Date.now();
+  entry.spent = d.totals.net_expense;
+  entry.operations = d.totals.operations;
+  entry.dash = d;
+
+  writeHistory([entry, ...list.filter((e) => e.id !== entry.id)]);
+  state.historyId = entry.id;
+  renderHistory();
+}
+
+function rememberReport(report) {
+  const list = readHistory();
+  const entry = list.find((e) => e.id === state.historyId) || list[0];
+  if (!entry) return;
+  entry.report = report;
+  entry.when = new Date().toLocaleDateString("ru-RU");
+  writeHistory(list);
+  renderHistory();
+}
+
+function historyCard(entry, index) {
+  const [main, light, band] = HISTORY_SKINS[index % HISTORY_SKINS.length];
+  const score = entry.report ? `${entry.report.score} из 100` : "не собран";
+  return `
+    <article class="hist-card" data-id="${entry.id}" tabindex="0" role="button"
+             aria-label="Открыть разбор за ${entry.period}"
+             style="--c-main:${main};--c-light:${light};--c-band:${band};animation-delay:${(index * 0.05).toFixed(2)}s">
+      <span class="hist-band" aria-hidden="true"></span>
+      <span class="hist-gloss" aria-hidden="true"></span>
+      <header class="hist-head-row">
+        <div class="hist-period">
+          <b>${entry.period}</b>
+          <span>разбор от ${entry.when}</span>
+        </div>
+        <span class="hist-chip" aria-hidden="true"></span>
+      </header>
+      <div class="hist-parts">
+        <button class="hist-part" data-open="dash" data-id="${entry.id}">
+          <b>Траты</b>
+          <span class="num">${money(entry.spent)}</span>
+        </button>
+        <button class="hist-part" data-open="report" data-id="${entry.id}">
+          <b>Разбор</b>
+          <span class="num">${score}</span>
+        </button>
+      </div>
+    </article>`;
+}
+
+function renderHistory() {
+  const deck = $("history-deck");
+  if (!deck) return;
+  const list = readHistory();
+
+  $("history-empty").hidden = list.length > 0;
+  $("history-clear").hidden = list.length === 0;
+  deck.innerHTML = list.map(historyCard).join("");
+
+  deck.querySelectorAll(".hist-card").forEach((card) => {
+    const entry = list.find((e) => e.id === card.dataset.id);
+    card.onclick = (event) => {
+      const part = event.target.closest(".hist-part");
+      openHistory(entry, part ? part.dataset.open : "dash", card);
+    };
+    card.onkeydown = (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        openHistory(entry, "dash", card);
+      }
+    };
+  });
+}
+
+/* Окно разбора из истории: две страницы – «Траты» и «Разбор». */
+
+const histModal = $("hist-modal");
+let histPage = 0;
+let histSource = null;
+
+function setHistPage(index, animate = true) {
+  histPage = Math.max(0, Math.min(1, index));
+  const track = $("hist-track");
+  track.style.transition = animate ? "" : "none";
+  track.style.transform = `translateX(-${histPage * 50}%)`;
+  if (!animate) requestAnimationFrame(() => { track.style.transition = ""; });
+
+  histModal.querySelectorAll(".hist-tab").forEach((tab, i) => {
+    tab.classList.toggle("on", i === histPage);
+    tab.setAttribute("aria-selected", String(i === histPage));
+  });
+  $("hist-prev").disabled = histPage === 0;
+  $("hist-next").disabled = histPage === 1;
+}
+
+// Карточка разворачивается в окно: окно начинает с размеров и места
+// карточки и за один переход занимает своё положение.
+function growFrom(card) {
+  const sheet = $("hist-sheet");
+  const from = card.getBoundingClientRect();
+  const to = sheet.getBoundingClientRect();
+
+  sheet.style.transition = "none";
+  sheet.style.transformOrigin = "top left";
+  sheet.style.transform =
+    `translate(${from.left - to.left}px, ${from.top - to.top}px)` +
+    ` scale(${(from.width / to.width).toFixed(4)}, ${(from.height / to.height).toFixed(4)})`;
+  sheet.style.opacity = "0.5";
+
+  requestAnimationFrame(() => {
+    sheet.style.transition = "transform 0.42s cubic-bezier(0.2, 0.85, 0.3, 1), opacity 0.28s ease-out";
+    sheet.style.transform = "none";
+    sheet.style.opacity = "1";
+  });
+}
+
+function openHistory(entry, page, card) {
+  if (!entry) return;
+  histSource = card || null;
+
+  $("hist-title").textContent = entry.period;
+  $("hist-when").textContent = `разбор от ${entry.when}`;
+
+  renderDash(entry.dash, $("hist-dash"));
+  if (entry.report) {
+    renderReport(entry.report, $("hist-report"));
+  } else {
+    $("hist-report").innerHTML = `
+      <div class="card empty">
+        <h2>Разбор не собран</h2>
+        <p>По этой выписке вопросы остались без ответов, поэтому итог не сохранился.
+           Загрузите выписку заново и пройдите разбор до конца.</p>
+      </div>`;
+  }
+
+  histModal.hidden = false;
+  document.body.classList.add("locked");
+  setHistPage(page === "report" ? 1 : 0, false);
+  if (card) growFrom(card);
+}
+
+function closeHistory() {
+  const sheet = $("hist-sheet");
+  if (histSource) {
+    const from = histSource.getBoundingClientRect();
+    const to = sheet.getBoundingClientRect();
+    sheet.style.transition = "transform 0.3s ease-in, opacity 0.3s ease-in";
+    sheet.style.transform =
+      `translate(${from.left - to.left}px, ${from.top - to.top}px)` +
+      ` scale(${(from.width / to.width).toFixed(4)}, ${(from.height / to.height).toFixed(4)})`;
+    sheet.style.opacity = "0";
+    setTimeout(() => {
+      histModal.hidden = true;
+      sheet.style.cssText = "";
+      document.body.classList.remove("locked");
+    }, 280);
+    return;
+  }
+  histModal.hidden = true;
+  document.body.classList.remove("locked");
+}
+
+$("history-open").onclick = () => {
+  const panel = $("history-panel");
+  const open = panel.hidden;
+  panel.hidden = !open;
+  $("history-open").setAttribute("aria-expanded", String(open));
+  if (open) renderHistory();
+};
+
+$("history-clear").onclick = () => {
+  try { localStorage.removeItem(historyKey()); } catch (err) { /* хранилище закрыто настройками */ }
+  renderHistory();
+};
+
+$("hist-close").onclick = closeHistory;
+histModal.addEventListener("click", (e) => { if (e.target === histModal) closeHistory(); });
+$("hist-prev").onclick = () => setHistPage(histPage - 1);
+$("hist-next").onclick = () => setHistPage(histPage + 1);
+histModal.querySelectorAll(".hist-tab").forEach((tab, i) => {
+  tab.onclick = () => setHistPage(i);
+});
+
+document.addEventListener("keydown", (e) => {
+  if (histModal.hidden) return;
+  if (e.key === "Escape") closeHistory();
+  if (e.key === "ArrowRight") setHistPage(histPage + 1);
+  if (e.key === "ArrowLeft") setHistPage(histPage - 1);
+});
+
+// Страницы листаются и пальцем.
+let swipeStart = null;
+$("hist-slider").addEventListener("touchstart", (e) => {
+  swipeStart = e.touches[0].clientX;
+}, { passive: true });
+$("hist-slider").addEventListener("touchend", (e) => {
+  if (swipeStart === null) return;
+  const shift = e.changedTouches[0].clientX - swipeStart;
+  if (Math.abs(shift) > 60) setHistPage(histPage + (shift < 0 ? 1 : -1));
+  swipeStart = null;
+});
 
 /* ---------- отзыв ---------- */
 

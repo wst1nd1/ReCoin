@@ -104,6 +104,11 @@
           <button class="btn" id="go-accounts">Продолжить</button>
           <button class="btn ghost" id="add-more">Добавить ещё выписку</button>
         </div>
+
+      <!-- Промежуток перед подвалом: он же прижимает подвал к низу экрана,
+           когда содержимого мало. -->
+      <div class="footer-gap" aria-hidden="true"></div>
+
       <footer class="site-footer">
   <!-- Знак на фоне: крупнее подвала, поэтому виден только частью. -->
   <div class="footer-word" id="footer-word" aria-hidden="true"
@@ -265,7 +270,26 @@
 
           <div class="actions">
             <button class="btn ghost" id="profile-password">Изменить пароль</button>
+            <button class="btn ghost" id="history-open"
+                    aria-expanded="false" aria-controls="history-panel">История разборов</button>
           </div>
+        </div>
+
+        <!-- Прошлые разборы. Хранятся в браузере, поэтому список собирает app.js. -->
+        <div class="card history-card" id="history-panel" hidden>
+          <h3>История разборов</h3>
+          <p class="sub">Нажмите на карточку – откроются траты и разбор за тот период.</p>
+
+          <div class="hist-deck" id="history-deck"></div>
+
+          <p class="muted" id="history-empty" hidden>
+            Пока пусто. Карточка появится, когда вы посмотрите траты по загруженной выписке.</p>
+
+          <div class="actions">
+            <button class="btn ghost" id="history-clear" hidden>Очистить историю</button>
+          </div>
+
+          <p class="muted">История хранится в этом браузере и на сервер не отправляется.</p>
         </div>
       </section>
 
@@ -340,6 +364,37 @@
 
       <button class="btn full" type="submit" id="pass-submit">Прислать код</button>
     </form>
+  </div>
+</div>
+
+<!-- Разбор из истории -->
+<div class="modal hist-modal" id="hist-modal" hidden>
+  <div class="hist-sheet" id="hist-sheet" role="dialog" aria-modal="true" aria-labelledby="hist-title">
+    <header class="hist-head">
+      <div class="hist-titles">
+        <h2 id="hist-title">Разбор</h2>
+        <p id="hist-when"></p>
+      </div>
+
+      <div class="hist-tabs" role="tablist">
+        <button class="hist-tab on" role="tab" aria-selected="true">Траты</button>
+        <button class="hist-tab" role="tab" aria-selected="false">Разбор</button>
+      </div>
+
+      <button class="close" id="hist-close" aria-label="Закрыть">✕</button>
+    </header>
+
+    <div class="hist-slider" id="hist-slider">
+      <div class="hist-track" id="hist-track">
+        <div class="hist-pane" id="hist-dash"></div>
+        <div class="hist-pane" id="hist-report"></div>
+      </div>
+    </div>
+
+    <div class="hist-nav">
+      <button class="btn ghost" id="hist-prev">Траты</button>
+      <button class="btn ghost" id="hist-next">Разбор</button>
+    </div>
   </div>
 </div>
 
