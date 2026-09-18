@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
+from pathlib import Path
 
 from dotenv import load_dotenv
 
@@ -13,6 +14,20 @@ from dotenv import load_dotenv
 load_dotenv(override=True)
 
 DEFAULT_MODEL = "claude-opus-5"
+
+# Каталог, куда приложение пишет свои файлы: базу аккаунтов и копии отзывов.
+# По умолчанию это корень проекта. На хостинге переменная RECOIN_DATA_DIR
+# указывает на подключённый диск, и тогда данные переживают развёртывание.
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+
+def data_dir() -> Path:
+    path = Path(os.getenv("RECOIN_DATA_DIR") or BASE_DIR)
+    try:
+        path.mkdir(parents=True, exist_ok=True)
+    except OSError:
+        return BASE_DIR
+    return path
 
 
 @dataclass(frozen=True)

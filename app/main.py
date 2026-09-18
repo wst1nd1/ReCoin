@@ -18,7 +18,7 @@ from starlette.requests import Request
 
 from . import agent, analytics, auth, fallback, mailer, netting, portfolio
 from .categorizer import categorize_all, clean_merchant
-from .config import get_settings
+from .config import data_dir, get_settings
 from .parser import parse_statement
 
 log = logging.getLogger(__name__)
@@ -32,7 +32,7 @@ MAX_FEEDBACK_LENGTH = 4000
 MAX_IMAGE_BYTES = 5 * 1024 * 1024
 MAX_AVATAR_BYTES = 2 * 1024 * 1024
 # Копии отзывов на случай, когда письмо не уходит.
-FEEDBACK_DIR = BASE_DIR.parent / "feedback"
+FEEDBACK_DIR = data_dir() / "feedback"
 
 app = FastAPI(title="ReCoin")
 app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")

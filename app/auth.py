@@ -16,7 +16,9 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 
-DB_PATH = Path(__file__).resolve().parent.parent / "recoin.db"
+from .config import data_dir
+
+DB_PATH = data_dir() / "recoin.db"
 
 SESSION_TTL_SECONDS = 60 * 60 * 24 * 30  # месяц
 PBKDF2_ROUNDS = 200_000

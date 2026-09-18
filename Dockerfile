@@ -1,5 +1,5 @@
 # Образ для площадок, запускающих приложения из контейнера
-# (Hugging Face Spaces, Back4App, Koyeb и подобные).
+# (Timeweb Cloud, Hugging Face Spaces, Back4App, Koyeb и подобные).
 
 FROM python:3.13-slim
 
@@ -15,14 +15,22 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY --chown=recoin:recoin . .
 
+# Каталог для базы аккаунтов и копий отзывов. Если площадка подключит сюда
+# диск, данные переживут пересборку образа.
+RUN mkdir -p /app/data && chown recoin:recoin /app/data
+VOLUME ["/app/data"]
+
 USER recoin
 ENV HOME=/home/recoin \
     PATH=/home/recoin/.local/bin:$PATH \
     PYTHONUNBUFFERED=1 \
-    RECOIN_HTTPS=1
+    RECOIN_HTTPS=1 \
+    RECOIN_DATA_DIR=/app/data \
+    PORT=8080
 
-EXPOSE 7860
+EXPOSE 8080
 
 # Один рабочий процесс обязателен. Разобранные выписки хранятся в памяти,
 # при нескольких процессах пользователь теряет загруженные данные.
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "7860", "--workers", "1"]
+# Порт берётся из переменной окружения: площадки задают его по-своему.
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8080} --workers 1"]

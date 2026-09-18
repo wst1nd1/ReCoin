@@ -1,0 +1,14 @@
+# В образ не должны попадать секреты, локальная база и рабочие каталоги.
+.env
+.venv
+.git
+.github
+.devcontainer
+.pytest_cache
+__pycache__
+*.pyc
+recoin.db
+feedback
+docs
+samples
+.DS_Store
