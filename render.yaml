@@ -25,3 +25,21 @@ services:
         sync: false
       - key: ANTHROPIC_AUTH_TOKEN
         sync: false
+      # Письма с кодом восстановления пароля. Пока значения пустые, код
+      # пишется в журнал сервера, а письмо не уходит.
+      - key: MAIL_FROM_NAME
+        value: ReCoin
+      - key: MAIL_FROM
+        sync: false
+      - key: BREVO_API_KEY
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: SMTP_FROM
+        sync: false
