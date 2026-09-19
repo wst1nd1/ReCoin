@@ -120,8 +120,18 @@ def _clear_accounts_once() -> None:
     с базой остаётся отметка, и последующие перезапуски данные не трогают,
     даже если переменную забыли убрать.
     """
-    enabled = (os.getenv("RECOIN_CLEAR_ACCOUNTS") or "").strip().lower() in {"1", "true", "yes"}
-    if not enabled or RESET_MARKER.exists():
+    value = (os.getenv("RECOIN_CLEAR_ACCOUNTS") or "").strip()
+    if not value:
+        return
+
+    # В отметке хранится значение переменной, при котором очистка уже прошла.
+    # Повторные запуски с тем же значением данные не трогают, а чтобы удалить
+    # записи ещё раз, достаточно записать в переменную другое значение.
+    try:
+        done = RESET_MARKER.read_text(encoding="utf-8").strip()
+    except OSError:
+        done = ""
+    if done == value:
         return
 
     with _connect() as conn:
@@ -136,12 +146,13 @@ def _clear_accounts_once() -> None:
         )
 
     try:
-        RESET_MARKER.write_text(f"{time.time()}\n", encoding="utf-8")
+        RESET_MARKER.write_text(value, encoding="utf-8")
     except OSError as exc:
         log.warning("Отметка об очистке не записана: %s", exc)
 
-    log.warning("Учётные записи удалены, записей было: %s. Уберите переменную "
-                "RECOIN_CLEAR_ACCOUNTS.", removed)
+    log.warning("Учётные записи удалены, записей было: %s. Чтобы повторить "
+                "очистку позже, задайте переменной RECOIN_CLEAR_ACCOUNTS "
+                "другое значение.", removed)
 
 
 def _hash_password(password: str, salt: bytes | None = None) -> str:
