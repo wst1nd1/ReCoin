@@ -805,6 +805,25 @@ textarea::placeholder { color: var(--placeholder); }
   .rail-nav { flex-direction: row; }
   .rail-btn.quiet { margin-top: 0; margin-left: auto; }
   .user .who { display: none; }
+
+  /* На телефоне профиль переезжает в верхнюю полосу и встаёт
+     рядом с кнопкой отзыва, а переключатели языка и темы
+     поднимаются на строку с заголовком раздела. */
+  .rail .user-wrap { margin-left: 6px; }
+  .rail .user { background: none; box-shadow: none; padding: 4px; }
+  .rail .user:hover { box-shadow: none; }
+
+  .topbar {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    column-gap: 12px;
+    row-gap: 2px;
+  }
+  .titles { display: contents; }
+  .titles h1 { grid-column: 1; grid-row: 1; }
+  .titles p { grid-column: 1 / -1; grid-row: 2; }
+  .topbar-right { grid-column: 2; grid-row: 1; margin-left: 0; gap: 8px; }
   .acc { grid-template-columns: 1fr; }
   select, .choice-buttons { width: 100%; }
   .choice-btn { flex: 1; }

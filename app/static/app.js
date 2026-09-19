@@ -1414,3 +1414,21 @@ passForm.addEventListener("submit", async (e) => {
 // иначе первое нажатие «назад» никуда не ведёт.
 history.replaceState({ step: 0 }, "", "#" + STEPS[0].slug);
 go(0, false);
+
+// На узком экране профиль переносится в верхнюю полосу, к кнопке отзыва:
+// на телефоне он занимал отдельную строку под заголовком раздела.
+const userWrap = document.querySelector(".user-wrap");
+const railBar = document.querySelector(".rail");
+const topbarRight = document.querySelector(".topbar-right");
+
+if (userWrap && railBar && topbarRight) {
+  const narrowScreen = window.matchMedia("(max-width: 720px)");
+
+  function placeUserWrap() {
+    const target = narrowScreen.matches ? railBar : topbarRight;
+    if (userWrap.parentElement !== target) target.appendChild(userWrap);
+  }
+
+  placeUserWrap();
+  narrowScreen.addEventListener("change", placeUserWrap);
+}
