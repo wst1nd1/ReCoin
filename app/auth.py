@@ -8,6 +8,7 @@ pbkdf2-хеша с индивидуальной солью; исходный п�
 from __future__ import annotations
 
 import hashlib
+import logging
 import os
 import re
 import secrets
@@ -18,7 +19,11 @@ from pathlib import Path
 
 from .config import data_dir
 
+log = logging.getLogger(__name__)
+
 DB_PATH = data_dir() / "recoin.db"
+# Отметка о том, что разовая очистка учётных записей уже выполнена.
+RESET_MARKER = DB_PATH.parent / ".accounts-cleared"
 
 SESSION_TTL_SECONDS = 60 * 60 * 24 * 30  # месяц
 PBKDF2_ROUNDS = 200_000
@@ -103,6 +108,40 @@ def init_db() -> None:
         ):
             if column not in existing:
                 conn.execute(f"ALTER TABLE users ADD COLUMN {column} {definition}")
+
+    _clear_accounts_once()
+
+
+def _clear_accounts_once() -> None:
+    """Разовое удаление всех учётных записей.
+
+    На хостинге доступа к файлам приложения нет, поэтому очистка включается
+    переменной окружения RECOIN_CLEAR_ACCOUNTS. После первой очистки рядом
+    с базой остаётся отметка, и последующие перезапуски данные не трогают,
+    даже если переменную забыли убрать.
+    """
+    enabled = (os.getenv("RECOIN_CLEAR_ACCOUNTS") or "").strip().lower() in {"1", "true", "yes"}
+    if not enabled or RESET_MARKER.exists():
+        return
+
+    with _connect() as conn:
+        removed = conn.execute("SELECT COUNT(*) FROM users").fetchone()[0]
+        conn.executescript(
+            """
+            DELETE FROM reset_codes;
+            DELETE FROM sessions;
+            DELETE FROM users;
+            DELETE FROM sqlite_sequence WHERE name = 'users';
+            """
+        )
+
+    try:
+        RESET_MARKER.write_text(f"{time.time()}\n", encoding="utf-8")
+    except OSError as exc:
+        log.warning("Отметка об очистке не записана: %s", exc)
+
+    log.warning("Учётные записи удалены, записей было: %s. Уберите переменную "
+                "RECOIN_CLEAR_ACCOUNTS.", removed)
 
 
 def _hash_password(password: str, salt: bytes | None = None) -> str:
