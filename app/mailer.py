@@ -29,8 +29,18 @@ log = logging.getLogger(__name__)
 BREVO_URL = "https://api.brevo.com/v3/smtp/email"
 REQUEST_TIMEOUT = 20
 
-# Куда приходят отзывы из приложения.
-FEEDBACK_TO = os.getenv("FEEDBACK_TO") or "thewasteland983@gmail.com"
+
+def _feedback_recipient() -> str:
+    """Куда приходят отзывы из приложения.
+
+    По умолчанию это почтовый ящик проекта, с которого письма и уходят.
+    Отдельный адрес задаётся переменной FEEDBACK_TO.
+    """
+    for name in ("FEEDBACK_TO", "MAIL_FROM", "SMTP_FROM", "SMTP_USER"):
+        value = (os.getenv(name) or "").strip()
+        if value:
+            return value
+    return ""
 
 
 def _brevo_config() -> dict[str, str] | None:
@@ -195,9 +205,14 @@ def send_reset_code(to: str, code: str, name: str = "", lang: str = "ru") -> boo
 def send_feedback(text: str, author: str, attachment: tuple[str, bytes] | None = None,
                   lang: str = "ru") -> bool:
     """Переслать отзыв пользователя."""
+    recipient = _feedback_recipient()
+    if not recipient:
+        log.warning("Отзыв не отправлен: почта не настроена, копия осталась на диске.")
+        return False
+
     if lang == "en":
         body = f"Feedback from ReCoin\n\nFrom: {author}\n\n{text}\n"
-        return _deliver(FEEDBACK_TO, "ReCoin feedback", body, attachment)
+        return _deliver(recipient, "ReCoin feedback", body, attachment)
 
     body = f"Отзыв из ReCoin\n\nОт кого: {author}\n\n{text}\n"
-    return _deliver(FEEDBACK_TO, "Отзыв о ReCoin", body, attachment)
+    return _deliver(recipient, "Отзыв о ReCoin", body, attachment)
