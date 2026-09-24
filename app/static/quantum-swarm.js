@@ -103,10 +103,18 @@ export function QuantumSwarm({ particleCount, chrome = true, tagline = "SWARM", 
         cy: widthChanged || !previous.height ? rect.height / 2 : previous.cy,
       };
 
+      // Полоса узора на витрине тянется на несколько тысяч пикселей, но
+      // видна всегда только часть. Холст делается размером с видимое окно
+      // и едет вместе с прокруткой: очищать и перерисовывать всю полосу
+      // каждый кадр – это и есть главная трата.
+      const viewHeight = Math.min(rect.height, (window.innerHeight || rect.height) + 200);
+      dimensionsRef.current.viewHeight = viewHeight;
+      dimensionsRef.current.dpr = dpr;
+
       canvas.width = Math.round(rect.width * dpr);
-      canvas.height = Math.round(rect.height * dpr);
+      canvas.height = Math.round(viewHeight * dpr);
       canvas.style.width = `${rect.width}px`;
-      canvas.style.height = `${rect.height}px`;
+      canvas.style.height = `${viewHeight}px`;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
       // Заново точки расставляются только при смене ширины. Высота меняется
@@ -200,12 +208,25 @@ export function QuantumSwarm({ particleCount, chrome = true, tagline = "SWARM", 
       }
 
       const { width, height, cx, cy } = dimensionsRef.current;
+      const viewHeight = dimensionsRef.current.viewHeight || height;
+      const dpr = dimensionsRef.current.dpr || 1;
       const particles = particlesRef.current;
       const pointer = pointerRef.current;
       const palette = paletteRef.current;
 
       if (!reduced) time += 0.002;
-      ctx.clearRect(0, 0, width, height);
+
+      // Видимый кусок полосы: холст сдвигается вместе с прокруткой,
+      // а начало координат остаётся привязанным к полосе.
+      const offset = Math.min(Math.max(-container.getBoundingClientRect().top, 0),
+                              Math.max(0, height - viewHeight));
+      canvas.style.transform = offset ? `translateY(${offset}px)` : "";
+      ctx.setTransform(dpr, 0, 0, dpr, 0, -offset * dpr);
+      ctx.clearRect(0, offset, width, viewHeight);
+
+      // За краями видимой части рисовать нечего.
+      const seenTop = offset - 120;
+      const seenBottom = offset + viewHeight + 120;
 
       // Ударные волны от нажатий расходятся кольцами и затухают.
       for (let s = pointer.shockwaves.length - 1; s >= 0; s--) {
@@ -274,6 +295,7 @@ export function QuantumSwarm({ particleCount, chrome = true, tagline = "SWARM", 
         const limit = Math.min(particles.length, i + 10);
         for (let j = i + 1; j < limit; j++) {
           const b = particles[j];
+          if ((a.y < seenTop || a.y > seenBottom) && (b.y < seenTop || b.y > seenBottom)) continue;
           const dx = a.x - b.x;
           const dy = a.y - b.y;
           const distSq = dx * dx + dy * dy;
@@ -299,6 +321,7 @@ export function QuantumSwarm({ particleCount, chrome = true, tagline = "SWARM", 
       // Точки тоже собираются в один путь: заливка у них общая.
       const dots = new Path2D();
       for (const p of particles) {
+        if (p.y < seenTop || p.y > seenBottom) continue;
         const radius = p.size + p.excitation * 2.5;
         if (p.excitation > 0.3) {
           ctx.fillStyle = `rgba(${palette.rgb}, ${p.excitation * 0.25})`;
@@ -372,7 +395,7 @@ export function QuantumSwarm({ particleCount, chrome = true, tagline = "SWARM", 
       onMouseLeave=${handleLeave}
       class=${cn("absolute inset-0 select-none overflow-hidden")}
     >
-      <canvas ref=${canvasRef} class="absolute inset-0 block h-full w-full" />
+      <canvas ref=${canvasRef} class="absolute left-0 top-0 block w-full" />
 
       ${chrome &&
       html`
