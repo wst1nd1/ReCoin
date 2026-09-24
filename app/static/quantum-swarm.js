@@ -43,7 +43,10 @@ export function QuantumSwarm({ particleCount, chrome = true, tagline = "SWARM", 
     const { width, height, cx, cy } = dimensionsRef.current;
     if (!width || !height) return;
 
-    const count = particleCount || (width < 620 ? 90 : width < 1000 ? 160 : 240);
+    // Точек столько, сколько тянет машина: на слабом устройстве их меньше.
+    const heavy = (navigator.hardwareConcurrency || 4) <= 4;
+    const base = width < 620 ? 90 : width < 1000 ? 150 : 210;
+    const count = particleCount || Math.round(base * (heavy ? 0.65 : 1));
     const golden = Math.PI * 2 * ((1 + Math.sqrt(5)) / 2);
     const maxRadius = Math.max(width, height) * 0.55;
     const particles = [];
@@ -84,7 +87,9 @@ export function QuantumSwarm({ particleCount, chrome = true, tagline = "SWARM", 
     const ctx = canvas.getContext("2d");
 
     const apply = (rect) => {
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      // Выше полутора точек на пиксель разница не видна, а закрашивать
+      // приходится вдвое большую площадь.
+      const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
       const previous = dimensionsRef.current;
 
       const widthChanged = Math.abs(rect.width - previous.width) > 2;
@@ -162,6 +167,12 @@ export function QuantumSwarm({ particleCount, chrome = true, tagline = "SWARM", 
     let visible = true;
     let animId = 0;
     let time = 0;
+    // Запас прочности для слабых машин: если кадры идут медленнее сорока
+    // пяти в секунду, узор прореживается один раз и остаётся таким.
+    let frames = 0;
+    let spent = 0;
+    let thinned = false;
+    let last = performance.now();
 
     const io = new IntersectionObserver((entries) => {
       visible = entries[0].isIntersecting;
@@ -171,6 +182,22 @@ export function QuantumSwarm({ particleCount, chrome = true, tagline = "SWARM", 
     const loop = () => {
       animId = requestAnimationFrame(loop);
       if (!isRunning || !visible || document.hidden) return;
+
+      const now = performance.now();
+      const delta = now - last;
+      last = now;
+      if (delta < 200) {
+        spent += delta;
+        frames++;
+      }
+      if (!thinned && frames >= 90) {
+        if (spent / frames > 22 && particlesRef.current.length > 80) {
+          particlesRef.current = particlesRef.current.filter((_, i) => i % 3 !== 0);
+          thinned = true;
+        }
+        frames = 0;
+        spent = 0;
+      }
 
       const { width, height, cx, cy } = dimensionsRef.current;
       const particles = particlesRef.current;
@@ -199,7 +226,7 @@ export function QuantumSwarm({ particleCount, chrome = true, tagline = "SWARM", 
 
         const dx = p.x - pointer.x;
         const dy = p.y - pointer.y;
-        const dist = Math.hypot(dx, dy);
+        const dist = Math.sqrt(dx * dx + dy * dy);
         if (dist < pointer.radius && dist > 0) {
           const force = (pointer.radius - dist) / pointer.radius;
           const direction = pointer.isDown ? -0.5 : 1.5;
@@ -211,7 +238,7 @@ export function QuantumSwarm({ particleCount, chrome = true, tagline = "SWARM", 
         for (const wave of pointer.shockwaves) {
           const wx = p.x - wave.x;
           const wy = p.y - wave.y;
-          const distWave = Math.hypot(wx, wy) || 1;
+          const distWave = Math.sqrt(wx * wx + wy * wy) || 1;
           const ring = Math.abs(distWave - wave.radius);
           if (ring < 30) {
             const impulse = (1 - ring / 30) * wave.strength * 15;
@@ -234,11 +261,17 @@ export function QuantumSwarm({ particleCount, chrome = true, tagline = "SWARM", 
         p.excitation *= 0.95;
       }
 
-      // Связи между соседями по спирали образуют сетку.
+      // Связи между соседями по спирали образуют сетку. Линии копятся
+      // в нескольких путях по близкой прозрачности и рисуются пачками:
+      // отдельная отрисовка каждого отрезка со своим цветом – самая
+      // дорогая часть кадра, на тысячах отрезков она и съедает кадры.
       ctx.lineWidth = 0.6;
+      const lanes = [new Path2D(), new Path2D(), new Path2D(), new Path2D()];
+      let hasLines = false;
+
       for (let i = 0; i < particles.length; i++) {
         const a = particles[i];
-        const limit = Math.min(particles.length, i + 15);
+        const limit = Math.min(particles.length, i + 10);
         for (let j = i + 1; j < limit; j++) {
           const b = particles[j];
           const dx = a.x - b.x;
@@ -246,15 +279,25 @@ export function QuantumSwarm({ particleCount, chrome = true, tagline = "SWARM", 
           const distSq = dx * dx + dy * dy;
           if (distSq > 14400) continue;
           const opacity = 1 - Math.sqrt(distSq) / 120;
-          const excited = Math.max(a.excitation, b.excitation);
-          ctx.strokeStyle = `rgba(${palette.rgb}, ${Math.min(0.7, opacity * palette.line + excited * 0.5)})`;
-          ctx.beginPath();
-          ctx.moveTo(a.x, a.y);
-          ctx.lineTo(b.x, b.y);
-          ctx.stroke();
+          const excited = a.excitation > b.excitation ? a.excitation : b.excitation;
+          const alpha = Math.min(0.7, opacity * palette.line + excited * 0.5);
+          const lane = lanes[alpha < 0.18 ? 0 : alpha < 0.32 ? 1 : alpha < 0.5 ? 2 : 3];
+          lane.moveTo(a.x, a.y);
+          lane.lineTo(b.x, b.y);
+          hasLines = true;
         }
       }
 
+      if (hasLines) {
+        const alphas = [0.12, 0.25, 0.4, 0.6];
+        for (let i = 0; i < lanes.length; i++) {
+          ctx.strokeStyle = `rgba(${palette.rgb}, ${alphas[i]})`;
+          ctx.stroke(lanes[i]);
+        }
+      }
+
+      // Точки тоже собираются в один путь: заливка у них общая.
+      const dots = new Path2D();
       for (const p of particles) {
         const radius = p.size + p.excitation * 2.5;
         if (p.excitation > 0.3) {
@@ -263,11 +306,11 @@ export function QuantumSwarm({ particleCount, chrome = true, tagline = "SWARM", 
           ctx.arc(p.x, p.y, radius * 3, 0, Math.PI * 2);
           ctx.fill();
         }
-        ctx.fillStyle = `rgba(${palette.rgb}, ${palette.dot})`;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
-        ctx.fill();
+        dots.moveTo(p.x + radius, p.y);
+        dots.arc(p.x, p.y, radius, 0, Math.PI * 2);
       }
+      ctx.fillStyle = `rgba(${palette.rgb}, ${palette.dot})`;
+      ctx.fill(dots);
     };
 
     animId = requestAnimationFrame(loop);
