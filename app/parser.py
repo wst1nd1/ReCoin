@@ -74,9 +74,20 @@ def parse_amount(raw: str) -> Decimal:
 
 
 def _extract_lines(data: bytes) -> list[str]:
+    """Текст выписки построчно.
+
+    Страницы разбираются по одной, и каждая сразу освобождается: библиотека
+    держит разобранную страницу в памяти, а на годовой выписке их десятки,
+    и на небольшом сервере разбор упирается в предел памяти.
+    """
+    lines: list[str] = []
     with pdfplumber.open(io.BytesIO(data)) as pdf:
-        pages = [page.extract_text() or "" for page in pdf.pages]
-    return [ln.strip() for ln in "\n".join(pages).split("\n") if ln.strip()]
+        for page in pdf.pages:
+            text = page.extract_text() or ""
+            lines.extend(ln.strip() for ln in text.split("\n") if ln.strip())
+            page.flush_cache()
+            page.close()
+    return lines
 
 
 def _finish(block: list[str], report: ParseReport) -> Transaction | None:
@@ -150,7 +161,9 @@ def parse_statement(data: bytes) -> tuple[list[Transaction], ParseReport]:
     lines = _extract_lines(data)
     report = ParseReport()
 
-    joined = "\n".join(lines)
+    # Сведения о выписке стоят в шапке и в подвале, середина – это операции.
+    # На длинной выписке склейка всего текста заняла бы лишнюю память.
+    joined = "\n".join(lines if len(lines) <= 800 else lines[:400] + lines[-400:])
     if "ТБАНК" in joined.upper() or "TinkoffSans" in joined:
         report.bank = "Т-Банк"
 

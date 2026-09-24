@@ -13,13 +13,13 @@ from decimal import Decimal
 from pathlib import Path
 
 from . import mcc as M
-from .config import build_client, get_settings
+from .config import build_client, data_dir, get_settings
 
 log = logging.getLogger(__name__)
 
 # Разобранные мерчанты складываются на диск: названия магазинов не являются
 # персональными данными, а повторный разбор одного и того же – трата денег.
-CACHE_PATH = Path(__file__).resolve().parent.parent / "merchant_cache.json"
+CACHE_PATH = data_dir() / "merchant_cache.json"
 
 MAX_MERCHANTS_PER_CALL = 120
 

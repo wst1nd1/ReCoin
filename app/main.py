@@ -24,7 +24,9 @@ from .parser import parse_statement
 log = logging.getLogger(__name__)
 
 BASE_DIR = Path(__file__).resolve().parent
-MAX_UPLOAD_BYTES = 25 * 1024 * 1024
+# Выписка за год занимает единицы мегабайтов. Предел держится низким:
+# разбор крупного файла упирается в память сервера.
+MAX_UPLOAD_BYTES = 12 * 1024 * 1024
 SESSION_TTL_SECONDS = 60 * 60 * 3
 MAX_SESSIONS = 200
 AUTH_COOKIE = "recoin_auth"
@@ -401,7 +403,7 @@ async def upload(
     for upload_file in files:
         raw = await upload_file.read()
         if len(raw) > MAX_UPLOAD_BYTES:
-            problems.append(f"{upload_file.filename}: файл больше 25 МБ")
+            problems.append(f"{upload_file.filename}: файл больше 12 МБ")
             continue
         if not raw[:5].startswith(b"%PDF"):
             problems.append(f"{upload_file.filename}: это не PDF")
@@ -413,6 +415,10 @@ async def upload(
             log.exception("разбор не удался")
             problems.append(f"{upload_file.filename}: не удалось прочитать ({exc})")
             continue
+        finally:
+            # Содержимое файла больше не нужно, а при нескольких выписках
+            # подряд оно иначе держалось бы в памяти до конца обработки.
+            del raw
 
         if not transactions:
             problems.append(
