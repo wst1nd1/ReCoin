@@ -14,6 +14,7 @@ from fastapi import BackgroundTasks, Cookie, FastAPI, File, Form, HTTPException,
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from starlette.concurrency import run_in_threadpool
 from starlette.requests import Request
 
 from . import agent, analytics, auth, fallback, mailer, netting, portfolio
@@ -410,7 +411,9 @@ async def upload(
             continue
 
         try:
-            transactions, report = parse_statement(raw)
+            # Разбор занимает процессор на секунды. В отдельном потоке он
+            # не задерживает остальные запросы к приложению.
+            transactions, report = await run_in_threadpool(parse_statement, raw)
         except Exception as exc:  # noqa: BLE001 – пользователю нужен понятный текст
             log.exception("разбор не удался")
             problems.append(f"{upload_file.filename}: не удалось прочитать ({exc})")
@@ -435,14 +438,17 @@ async def upload(
                     and s.report.period_start == report.period_start)
         ]
         session.statements.append(
-            portfolio.Statement(report=report, transactions=categorize_all(transactions))
+            portfolio.Statement(
+                report=report,
+                transactions=await run_in_threadpool(categorize_all, transactions),
+            )
         )
         accepted += 1
 
     if not session.statements:
         raise HTTPException(status_code=400, detail="; ".join(problems) or "Не удалось разобрать файлы")
 
-    state = _build_state(session)
+    state = await run_in_threadpool(_build_state, session)
     payload = state["payload"]
     payload["problems"] = problems
     payload["accepted"] = accepted
@@ -450,7 +456,7 @@ async def upload(
 
 
 @app.post("/api/accounts")
-async def set_accounts(body: dict, recoin_auth: str | None = Cookie(default=None)):
+def set_accounts(body: dict, recoin_auth: str | None = Cookie(default=None)):
     """Пользователь уточняет назначение своих счетов: тип известного счёта
     (вклад/кредит/другое) или ответ на вопрос "чей это счёт" для неопознанного."""
     session = _get_session(_require_user(recoin_auth))
@@ -471,7 +477,7 @@ async def set_accounts(body: dict, recoin_auth: str | None = Cookie(default=None
 
 
 @app.post("/api/questions")
-async def questions(recoin_auth: str | None = Cookie(default=None),
+def questions(recoin_auth: str | None = Cookie(default=None),
                     recoin_lang: str | None = Cookie(default=None)):
     """Вопросы под конкретные цифры пользователя."""
     session = _get_session(_require_user(recoin_auth))
@@ -492,7 +498,7 @@ async def questions(recoin_auth: str | None = Cookie(default=None),
 
 
 @app.post("/api/report")
-async def build_report(body: dict, recoin_auth: str | None = Cookie(default=None),
+def build_report(body: dict, recoin_auth: str | None = Cookie(default=None),
                        recoin_lang: str | None = Cookie(default=None)):
     """Итоговый разбор с учётом ответов пользователя."""
     session = _get_session(_require_user(recoin_auth))
